@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/passportconfig.ts","./src/zodschema.ts","./src/lib/index.ts","./src/routes/authroute.ts","./src/routes/index.ts"],"version":"5.6.3"}
+{"root":["./src/index.ts","./src/passportconfig.ts","./src/zodschema.ts","./src/lib/index.ts","./src/middleware/index.ts","./src/routes/authroute.ts","./src/routes/index.ts","./src/routes/roomroute.ts","./src/ws/index.ts"],"version":"5.6.3"}

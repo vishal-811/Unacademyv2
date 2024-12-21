@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStartegy } from "passport-google-oauth20";
+import { Strategy as LocalStrategy } from "passport-local";
 import dotenv from "dotenv";
 import Prisma from "./lib/index"
 
@@ -9,6 +10,13 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "Your_Google_Cl
 
 
 export function initPassport() {
+passport.use(new LocalStrategy(
+  (username,password,role)=>{
+    
+  }
+) )
+
+
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     throw new Error("Google ENV variables are missing");
   }
@@ -54,7 +62,6 @@ passport.serializeUser(function (user: any, cb) {
   process.nextTick(function () {
     return cb(null, {
       id: user.id,
-      username: user.username,
     });
   });
 });
