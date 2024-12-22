@@ -7,7 +7,8 @@ import session from "express-session"
 import rootRouter from "./routes/index"
 import WebSocket,{ WebSocketServer } from 'ws';
 import { handleWebsocketMessageEvent } from './ws';
-
+import url from "url";
+import { extractAuthUser } from './ws/auth';
 
 const app=express();
 
@@ -26,7 +27,9 @@ const server = http.createServer(app);
 export const wss = new WebSocketServer({ server });
 
 wss.on('connection',(ws,req)=>{
-   console.log("THe headers is ",req.headers.cookie);
+  //  @ts-ignore
+   const token = url.parse(req.url, true).query.token as string;
+   const user = extractAuthUser(token, ws)
    ws.on('error',(error)=>{
      console.error(error);
    })

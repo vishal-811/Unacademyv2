@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import prisma from "../lib";
 import { CreateRoomSchema } from "../zodSchema";
 import { authMiddleware } from "../middleware";
+import { ApiResponse, ApiSuccessResponse } from "../lib/apiResponse";
 const router = Router();
 
 router.post(
@@ -9,16 +10,11 @@ router.post(
     authMiddleware,
     async (req: Request, res: Response) => {
         const CreateRoomPayload = CreateRoomSchema.safeParse(req.body);
-        if (!CreateRoomPayload.success) {
-            res.status(400).json({ msg: "Please provide all the fields" });
-            return;
-        }
+        if (!CreateRoomPayload.success) return ApiResponse(res, 401, false, "Please Provide all the inputs fields");
+
         try {
             const userId = req.session.user;
-            if (!userId?.id) {
-                res.status(401).json({ msg: "Please provide a userId" });
-                return;
-            }
+            if (!userId?.id) return ApiResponse(res, 401, false, "Please provide  a userId");
 
             const userDetails = await prisma.user.findFirst({
                 where: {
@@ -29,14 +25,10 @@ router.post(
                 },
             });
 
-            if (!userDetails) {
-                res.status(401).json({ msg: "User not found with this userId" });
-                return;
-            }
-            if (!userDetails.isAdmin) {
-                res.status(401).json({ msg: "only admin can create a room" });
-                return;
-            }
+            if (!userDetails) return ApiResponse(res, 401, false, "No user exist with this userId"); 
+
+            if (!userDetails.isAdmin) return ApiResponse(res, 401, false, "Only admin can create a room")
+
             const { title, description } = CreateRoomPayload.data;
             const room = await prisma.room.create({
                 data: {
@@ -46,12 +38,9 @@ router.post(
                 },
             });
 
-            res
-                .status(201)
-                .json({ msg: "Room created Sucessfully", roomId: room.id });
+            return ApiSuccessResponse(res, 201, true, "Room created Successfully", { roomId: room.id });
         } catch (error) {
-            console.log(error);
-            res.status(500).json({ msg: "Internal Server Error" });
+            return ApiResponse(res, 500, false, "Internal server Error");
         }
     }
 );

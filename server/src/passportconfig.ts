@@ -10,12 +10,6 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || "Your_Google_Cl
 
 
 export function initPassport() {
-passport.use(new LocalStrategy(
-  (username,password,role)=>{
-    
-  }
-) )
-
 
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     throw new Error("Google ENV variables are missing");
@@ -39,9 +33,10 @@ passport.use(new LocalStrategy(
           const user = await Prisma.user.upsert({
             create:{
               email :profile.emails[0].value,
+              username : profile.displayName
             },
             update:{
-              email :profile.emails[0].value,
+              username :profile.displayName
             },
             where:{
               email :profile.emails[0].value,
@@ -62,6 +57,7 @@ passport.serializeUser(function (user: any, cb) {
   process.nextTick(function () {
     return cb(null, {
       id: user.id,
+      username : user.picture
     });
   });
 });

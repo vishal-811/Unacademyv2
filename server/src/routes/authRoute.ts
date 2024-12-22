@@ -1,100 +1,107 @@
 import { Router, Request, Response } from "express";
 import passport from "passport";
-import { SignupSchema, SigninSchema } from "../zodSchema"
-import bcrypt from 'bcrypt'
+import { SignupSchema, SigninSchema } from "../zodSchema";
+import bcrypt from "bcrypt";
 import Prisma from "../lib/index";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import Jwt from "jsonwebtoken";
+import { ApiResponse, ApiSuccessResponse } from "../lib/apiResponse";
 
 dotenv.config();
 
 const router = Router();
 const CLIENT_URL = "http://localhost:5173/";
 
-declare module 'express-session' {
+declare module "express-session" {
   export interface SessionData {
     user: { [key: string]: string };
   }
 }
 
-
 router.post("/signup", async (req: Request, res: Response) => {
   const signupPayload = SignupSchema.safeParse(req.body);
-  if (!signupPayload.success) {
-    res.status(401).json({ msg: "Please Provide a valid inputs" });
-    return;
-  }
+  if (!signupPayload.success)
+    return ApiResponse(res, 401, false, "Please provide all the inputs fields");
 
   try {
     const { username, email, password, role } = signupPayload.data;
 
     const isUserAlreadyExist = await Prisma.user.findFirst({
       where: {
-        email: email
-      }
-    })
+        email: email,
+      },
+    });
 
-    if (isUserAlreadyExist) {
-      res.status(409).json({ msg: "User already exist with this credentials" });
-      return;
-    }
+    if (isUserAlreadyExist)
+      return ApiResponse(
+        res,
+        409,
+        false,
+        "User already exist with this credentials"
+      );
 
     const hashesPassword = await bcrypt.hash(password, 10);
-    const isadmin = role === 'instructor';
+    const isadmin = role === "instructor";
+
     const user = await Prisma.user.create({
       data: {
         username: username,
         email: email,
         password: hashesPassword,
-        isAdmin: isadmin
-      }
-    })
-    // const token = Jwt.sign(user.id, process.env.JWT_SECRET || '');
-    // res.cookie('token', token, { maxAge: 24 * 60 * 60 * 1000 });
-    req.session.user = {id: user.id};
-    res.status(201).json({ msg: "Signup sucessfull" , session : req.session});
+        isAdmin: isadmin,
+      },
+    });
+
+    const admin = role === "instructor";
+    const token = Jwt.sign(
+      { userId: user.id, isadmin: admin },
+      process.env.JWT_SECRET || ""
+    );
+    
+    res.cookie("token", token);
+    return ApiSuccessResponse(res, 201, true, "User Signup Sucessfully", null);
   } catch (error) {
-    res.status(500).json({ msg: "Internal Server Error" });
+    return ApiResponse(res, 500, false, "Internal Server Error");
   }
 });
 
 router.post("/signin", async (req: Request, res: Response) => {
   const signinPayload = SigninSchema.safeParse(req.body);
-  if (!signinPayload.success) {
-    res.status(401).json({ msg: "Please provide a valid inputs" });
-    return;
-  }
+  if (!signinPayload.success)
+    return ApiResponse(res, 401, false, "Please provide all the inputs fields");
 
   try {
     const { username, password, role } = signinPayload.data;
     const isUserExist = await Prisma.user.findFirst({
       where: {
-        username: username
-      }
-    })
+        username: username,
+      },
+    });
 
-    if (!isUserExist) {
-      res.status(401).json({ msg: "Wrong credentials, please Signup!" });
-      return;
-    }
-    if (!password || !isUserExist.password) {
-      throw new Error("Password is required and must not be null or undefined");
-    }
+    if (!isUserExist) return ApiResponse(res, 403, false, "User not exists");
+
+    if (!password || !isUserExist.password)
+      return ApiResponse(
+        res,
+        401,
+        false,
+        "Password is required and must not be null or undefined"
+      );
+
     const verifyPassword = bcrypt.compare(password, isUserExist.password);
-    if (!verifyPassword) {
-      res.status(401).json({ msg: "Wrong password" });
-      return;
-    }
-    // const admin = role === 'instructor';
-    // if (isUserExist.isAdmin === admin) {
-    //   res.status(401).json({ msg: "Please choose a valid role" });
-    //   return;
-    // }
-    // const token = Jwt.sign(isUserExist.id, process.env.JWT_SECRET || "");
-    // res.cookie('token', token)
-    req.session.user = {id : isUserExist.id};
-    res.status(200).json({ msg: "Login Successful" });
+    if (!verifyPassword) return ApiResponse(res, 401, false, "Wrong password");
+
+    const admin = role === "instructor";
+    const token = Jwt.sign(
+      { userId: isUserExist.id, isAdmin: admin },
+      process.env.JWT_SECRET || ""
+    );
+    res.cookie("token", token);
+
+    return ApiSuccessResponse(res, 200, true, "Login Success", null);
   } catch (error) {
-    res.status(500).json({ msg: "Internal Server Error" });
+    console.log("error", error);
+    return ApiResponse(res, 500, false, "Internal Server Error");
   }
 });
 

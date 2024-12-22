@@ -1,4 +1,4 @@
-import WebSocket, { WebSocketServer } from "ws"
+import WebSocket from "ws"
 import prisma from "../lib";
 
 const userRooms = new Map<string,WebSocket[]>(); //<RoomId,[user1,user2...]>
