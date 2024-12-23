@@ -1,5 +1,4 @@
 import { LucideIcon } from 'lucide-react'
-import { Children } from 'react'
 
 interface CustomButtonProps {
   onClick: () => void

@@ -1,12 +1,48 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { ExcalidrawComponent } from "../components/ExacliDraw"
 import { CustomButton } from "../components/Button"
 import { Maximize2, Minimize2, Share, FileUp, Video, Mic, Edit3 } from 'lucide-react'
+import { useSocket } from "../strore/useSocket"
+import cookie from "js-cookie"
 
 export default function Layout() {
   const [hidepanel, setIsHidePanel] = useState(false)
   const [activeScreen, setActiveScreen] = useState<'excalidraw' | 'screenshare' | 'video'>('video')
+  const [roomId, setRoomId] = useState<string | null>("c2fc0616-90ce-46fa-9c0b-e106ac54f911")
+  const setSocket = useSocket((state) => state.setSocket)
+
+  const cookies = cookie.get("token");
+  console.log("your cookie is", cookies);
+
+  const token_url = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJhM2Q1NTk1OS00OTFjLTRiYmYtOGZmMi0zZjhkZDRhOWZmZjUiLCJpc0FkbWluIjp0cnVlLCJpYXQiOjE3MzQ5NjMzMDh9.pA4K3Zb9WzpFvvBoeIJMTS9UBD2ufooS0LWfBy8cBHk"
+  useEffect(()=>{
+    const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+    
+    socket.onopen = () => {
+      socket.send(JSON.stringify({
+        type : "join_room",
+        data :{
+          roomId :roomId
+        }
+      }))
+    }
+
+    setSocket(socket);
+    
+    socket.onmessage = (message) => {
+       console.log(message);
+    }
+    
+    socket.onclose = () => {
+      socket.send(JSON.stringify({
+        type :"leave_room",
+        data :{
+          roomId : roomId
+        }
+      }))
+    }
+  })
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4">
@@ -34,7 +70,7 @@ export default function Layout() {
               <div className="p-4 h-full overflow-y-auto">
                 {/* Chat content goes here */}
                 <h2 className="text-lg font-semibold mb-4">Chat</h2>
-                {/* Add your chat component here */}
+                {/*  chat component */}
               </div>
               <CustomButton
                 variant="outline"

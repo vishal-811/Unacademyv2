@@ -2,12 +2,20 @@ import { useState } from 'react'
 import { User, Lock, ArrowRight, AlertCircle, Eye, EyeOff, GraduationCap, BookOpen } from 'lucide-react'
 import axios from "axios";
 import { useNavigate } from 'react-router-dom';
+import { useRole } from '../strore/useRole';
+import { useAuth } from '../strore/useAuth';
 
 export default function SigninPage() {
-  const [formData, setFormData] = useState({ username: '', password: '', role: '' })
+  const [formData, setFormData] = useState({ email: '', password: '', role: '' })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+
+  const userRole = useRole((state) => state.role);
+  const setUserRole = useRole((state) => state.setRole);
+
+  const isLoggedin = useAuth((state) => state.isLoggedin);
+  const setIsLoggedin = useAuth((state) => state.setIsLoggedin);
 
   const navigate = useNavigate();
 
@@ -18,7 +26,7 @@ export default function SigninPage() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    if (!formData.username) newErrors.username = 'username is required'
+    if (!formData.email) newErrors.email = 'email is required'
     if (!formData.password) newErrors.password = 'Password is required'
     if (!formData.role) newErrors.role = 'Role selection is required'
     setErrors(newErrors)
@@ -31,11 +39,13 @@ export default function SigninPage() {
       setIsSubmitting(true)
       try {
         const res = await axios.post("http://localhost:3000/api/v1/auth/signin",{
-            username  : formData.username,
+            email  : formData.email,
             password :formData.password,
             role : formData.role
         })
         if(res.status === 200){
+            setIsLoggedin(true);
+            setUserRole(res.data.data.role);
             navigate("/");
         }
       } catch (error) {
@@ -72,24 +82,24 @@ export default function SigninPage() {
         <div className="bg-zinc-800 p-8 rounded-lg shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="emailOrUsername" className="block text-sm font-medium text-zinc-300 mb-1">
-                Email or Username
+              <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
+                Email 
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  id="emailOrUsername"
-                  name="emailOrUsername"
-                  value={formData.username}
+                  id="email"
+                  name="email"
+                  value={formData.email}
                   onChange={handleChange}
                   className="w-full px-4 py-2 bg-zinc-700 text-zinc-100 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
-                  placeholder="Enter your email or username"
+                  placeholder="Enter your email"
                 />
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={18} />
               </div>
-              {errors.emailOrUsername && (
+              {errors.emailOremail && (
                 <p className="text-red-500 text-sm mt-1 flex items-center">
-                  <AlertCircle size={14} className="mr-1" /> {errors.emailOrUsername}
+                  <AlertCircle size={14} className="mr-1" /> {errors.email}
                 </p>
               )}
             </div>

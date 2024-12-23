@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib";
-import { CreateRoomSchema } from "../zodSchema";
+import { CreateRoomSchema } from "../schemas/ZodSchema";
 import { authMiddleware } from "../middleware";
 import { ApiResponse, ApiSuccessResponse } from "../lib/apiResponse";
 const router = Router();
@@ -45,46 +45,4 @@ router.post(
     }
 );
 
-// router.post("/joinRoom", async (req: Request, res: Response) => {
-//     let { roomId } = req.query;
-//     if (!roomId) {
-//         res.status(401).json({ msg: "Please provide a roomId" });
-//         return;
-//     }
-//     if (roomId != "string") {
-//         roomId = roomId.toString();
-//     }
-
-//     try {
-//         const RoomExist = await prisma.room.findFirst({
-//             where: {
-//                 id: roomId,
-//             },
-//         });
-
-//         if (!RoomExist) {
-//             res.status(404).json({ msg: "No Room exist with this room Id" });
-//             return;
-//         }
-//         const userId = "1";
-
-//         const JoinRoom = await prisma.user.update({
-//             where: {
-//                 id: userId,
-//             },
-//             data: {
-//                 JoinedRooms: {
-//                     connect: {
-//                         id: roomId,
-//                     },
-//                 },
-//             },
-//         });
-//         res
-//             .status(201)
-//             .json({ msg: "Room Created Sucessfully", roomId: JoinRoom.id });
-//     } catch (error) {
-//         res.status(500).json({ msg: "Internal server error" });
-//     }
-// });
 export default router;

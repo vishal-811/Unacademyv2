@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage"
 import SignupPage from "./pages/Signup"
 import SigninPage from "./pages/Signin"
 import Layout from "./pages/Layout"
+import { CreateRoom } from "./pages/CreateRoom"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
          <Route path="/signup" element ={<SignupPage/>}/>
          <Route path="signin" element={<SigninPage/>}/>
          <Route path="/layout" element={<Layout/>}/>
+         <Route path ="/createRoom" element={<CreateRoom/>}/>
        </Routes>
     </BrowserRouter> 
   )

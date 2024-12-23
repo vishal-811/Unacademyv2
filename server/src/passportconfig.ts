@@ -33,7 +33,9 @@ export function initPassport() {
           const user = await Prisma.user.upsert({
             create:{
               email :profile.emails[0].value,
-              username : profile.displayName
+              username : profile.displayName,
+              isAdmin : false,
+              password : profile.password
             },
             update:{
               username :profile.displayName

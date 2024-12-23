@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import passport from "passport";
-import { SignupSchema, SigninSchema } from "../zodSchema";
+import { SignupSchema, SigninSchema } from "../schemas/ZodSchema";
 import bcrypt from "bcrypt";
 import Prisma from "../lib/index";
 import dotenv from "dotenv";
@@ -24,7 +24,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     return ApiResponse(res, 401, false, "Please provide all the inputs fields");
 
   try {
-    const { username, email, password, role } = signupPayload.data;
+    const { username,email, password, role } = signupPayload.data;
 
     const isUserAlreadyExist = await Prisma.user.findFirst({
       where: {
@@ -59,7 +59,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     );
     
     res.cookie("token", token);
-    return ApiSuccessResponse(res, 201, true, "User Signup Sucessfully", null);
+    return ApiSuccessResponse(res, 201, true, "User Signup Sucessfully", { role : role });
   } catch (error) {
     return ApiResponse(res, 500, false, "Internal Server Error");
   }
@@ -71,10 +71,10 @@ router.post("/signin", async (req: Request, res: Response) => {
     return ApiResponse(res, 401, false, "Please provide all the inputs fields");
 
   try {
-    const { username, password, role } = signinPayload.data;
+    const { email, password, role } = signinPayload.data;
     const isUserExist = await Prisma.user.findFirst({
       where: {
-        username: username,
+        email:email ,
       },
     });
 
@@ -98,7 +98,7 @@ router.post("/signin", async (req: Request, res: Response) => {
     );
     res.cookie("token", token);
 
-    return ApiSuccessResponse(res, 200, true, "Login Success", null);
+    return ApiSuccessResponse(res, 200, true, "Login Success", { role : role });
   } catch (error) {
     console.log("error", error);
     return ApiResponse(res, 500, false, "Internal Server Error");
