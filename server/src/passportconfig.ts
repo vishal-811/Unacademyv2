@@ -3,6 +3,7 @@ import { Strategy as GoogleStartegy } from "passport-google-oauth20";
 import { Strategy as LocalStrategy } from "passport-local";
 import dotenv from "dotenv";
 import Prisma from "./lib/index"
+import { RoleType } from "@prisma/client";
 
 dotenv.config();
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || "Your_Google_Client_Id";
@@ -34,7 +35,7 @@ export function initPassport() {
             create:{
               email :profile.emails[0].value,
               username : profile.displayName,
-              isAdmin : false,
+              role : RoleType.student,
               password : profile.password
             },
             update:{

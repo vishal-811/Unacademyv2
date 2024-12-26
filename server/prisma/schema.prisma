@@ -13,13 +13,17 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum RoleType {
+  student 
+  instructor 
+}
 
 model User {
   id          String   @id @default(uuid())
   email       String   @unique
   username    String?  @unique
   password    String?
-  isAdmin     Boolean  @default(false)
+  role        RoleType
   createdAt   DateTime @default(now())
   createdRoom Room[]   @relation("creatorToRoom")
   joinedRooms Room[]   @relation("studentToRoom") //user(student) join to which room

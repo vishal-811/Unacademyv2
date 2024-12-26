@@ -17,14 +17,16 @@ app.use(
     secret: "Hello",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 24 * 60 * 60 * 100 },
+    cookie: { secure: false, maxAge: 24 * 60 * 60 * 100, sameSite: "none" },
   })
 );
 app.use(express.json());
-app.use(cors({
-  credentials : true,
-  origin :"http://localhost:5173/*"
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  })
+);
 
 const server = http.createServer(app);
 
@@ -41,20 +43,24 @@ wss.on("connection", (ws: WebSocket, req) => {
   ws.on("error", (error) => {
     console.error(error);
   });
-  ws.on("message", (message: string) => {
+  ws.on("message", (message: any) => {
     handleWebsocketMessageEvent(message, ws, userToken);
   });
-  ws.on("close",()=>{
-    handleWebsocketCloseEvent(ws)
-  })
+  ws.on("close", () => {
+    handleWebsocketCloseEvent();
+  });
 });
-
 
 initPassport();
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use("/api/v1", rootRouter);
+app.get("/", (req, res) => {
+  console.log(req.cookies);
+  console.log(req);
+  res.send("hehe");
+});
 
 server.listen(3000, () => {
   console.log("Server is running on port 3000");

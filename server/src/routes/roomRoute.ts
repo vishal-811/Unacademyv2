@@ -13,28 +13,33 @@ router.post(
         if (!CreateRoomPayload.success) return ApiResponse(res, 401, false, "Please Provide all the inputs fields");
 
         try {
-            const userId = req.session.user;
-            if (!userId?.id) return ApiResponse(res, 401, false, "Please provide  a userId");
+            let userId = req.session.userId;
 
+            if(!userId){
+                // @ts-ignore
+                userId = req.user.userId
+            }
+
+            if (!userId) return ApiResponse(res, 401, false, "Please provide  a userId");
             const userDetails = await prisma.user.findFirst({
                 where: {
-                    id: userId.id,
+                    id: userId,
                 },
                 select: {
-                    isAdmin: true,
+                    role: true,
                 },
             });
 
             if (!userDetails) return ApiResponse(res, 401, false, "No user exist with this userId"); 
 
-            if (!userDetails.isAdmin) return ApiResponse(res, 401, false, "Only admin can create a room")
+            if (userDetails.role !== "instructor") return ApiResponse(res, 401, false, "Only admin can create a room")
 
             const { title, description } = CreateRoomPayload.data;
             const room = await prisma.room.create({
                 data: {
                     roomTitle: title,
                     description: description,
-                    creatorId: userId?.id,
+                    creatorId: userId,
                 },
             });
 

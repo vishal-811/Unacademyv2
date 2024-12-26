@@ -11,7 +11,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
+import { useRole } from "../strore/useRole";
+import { useAuth } from "../strore/useAuth";
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -24,6 +26,14 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const setRole = useRole((state) => state.setRole);
+  const isLoggedIn = useAuth((state) => state.isLoggedIn)
+  const login = useAuth((state) => state.login);
+
+  if(isLoggedIn){
+    return <Navigate to = "/"/>
+  }
 
   const navigate = useNavigate();
 
@@ -78,19 +88,25 @@ export default function SignupPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-     const res = await axios.post("http://localhost:3000/api/v1/auth/signup",{
-        username : formData.username,
-        email : formData.email,
-        password : formData.password,
-        role : formData.role
-     })
-     if(res.status === 201){
-      setIsSuccess(true);
-      navigate("/");
-     }
+      const res = await axios.post("http://localhost:3000/api/v1/auth/signup", {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+      },{
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+      if (res.status === 201) {
+        login();
+        const role = res.data.data.role;
+        setRole(role);
+        setIsSuccess(true);
+        navigate("/");
+      }
     } catch (error) {
       setIsSuccess(false);
-    }finally{
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -170,15 +186,15 @@ export default function SignupPage() {
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => handleRoleChange("educator")}
+                      onClick={() => handleRoleChange("instructor")}
                       className={`flex-1 py-3 px-4 rounded-md text-lg font-medium flex items-center justify-center ${
-                        formData.role === "educator"
+                        formData.role === "instructor"
                           ? "bg-blue-600 text-white"
                           : "bg-zinc-700 text-zinc-300"
                       }`}
                     >
                       <GraduationCap className="mr-2" size={20} />
-                      Educator
+                      instructor
                     </motion.button>
                   </div>
                 )}

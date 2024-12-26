@@ -15,9 +15,10 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
 
   const userRole = useRole((state) => state.role);
-  const isLoggedin = useAuth((state) => state.isLoggedin);
+  const isLoggedIn = useAuth((state) => state.isLoggedIn);
 
-  
+  console.log("user login", isLoggedIn);
+  console.log("your role is", userRole);
   const navigate = useNavigate();
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -42,7 +43,7 @@ export default function Navbar() {
               ))}
             </div>
           </div>
-          {isLoggedin ? ( userRole === "student" ? 
+          {isLoggedIn ? ( userRole === "student" ? 
           <div className="hidden md:block"> <button onClick={()=>navigate('/layout')}  
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md
            text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2
@@ -51,7 +52,7 @@ export default function Navbar() {
           </button> </div> :
           
           <div className="hidden md:block">
-          <button onClick={()=>navigate('/createRoom')}  className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
+          <button onClick={()=>navigate('/layout')}  className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300">
              Create Room
           </button>
         </div>) : <div className="hidden md:block">
@@ -89,7 +90,7 @@ export default function Navbar() {
               {item.name}
             </a>
           ))}
-          <button onClick={()=>navigate('/signup')} className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300">
+          <button onClick={()=>navigate('/signin')} className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300">
             <User className="w-5 h-5 mr-2" />
             Login
           </button>

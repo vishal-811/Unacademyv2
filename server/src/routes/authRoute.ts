@@ -14,7 +14,7 @@ const CLIENT_URL = "http://localhost:5173/";
 
 declare module "express-session" {
   export interface SessionData {
-    user: { [key: string]: string };
+    userId: string;
   }
 }
 
@@ -41,14 +41,13 @@ router.post("/signup", async (req: Request, res: Response) => {
       );
 
     const hashesPassword = await bcrypt.hash(password, 10);
-    const isadmin = role === "instructor";
 
     const user = await Prisma.user.create({
       data: {
         username: username,
         email: email,
         password: hashesPassword,
-        isAdmin: isadmin,
+        role:role ,
       },
     });
 
@@ -75,7 +74,7 @@ router.post("/signin", async (req: Request, res: Response) => {
     const isUserExist = await Prisma.user.findFirst({
       where: {
         email:email ,
-      },
+      }
     });
 
     if (!isUserExist) return ApiResponse(res, 403, false, "User not exists");
@@ -87,17 +86,18 @@ router.post("/signin", async (req: Request, res: Response) => {
         false,
         "Password is required and must not be null or undefined"
       );
-
+     
+    if(role !== isUserExist.role){
+      return ApiResponse(res,401, false, "Wrong Role");
+    }
     const verifyPassword = bcrypt.compare(password, isUserExist.password);
     if (!verifyPassword) return ApiResponse(res, 401, false, "Wrong password");
 
-    const admin = role === "instructor";
     const token = Jwt.sign(
-      { userId: isUserExist.id, isAdmin: admin },
+      { userId: isUserExist.id, role: role },
       process.env.JWT_SECRET || ""
     );
-    res.cookie("token", token);
-
+    res.cookie("token", token)
     return ApiSuccessResponse(res, 200, true, "Login Success", { role : role });
   } catch (error) {
     console.log("error", error);

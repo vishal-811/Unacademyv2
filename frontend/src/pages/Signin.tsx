@@ -1,76 +1,103 @@
-import { useState } from 'react'
-import { User, Lock, ArrowRight, AlertCircle, Eye, EyeOff, GraduationCap, BookOpen } from 'lucide-react'
+import { useState } from "react";
+import {
+  User,
+  Lock,
+  ArrowRight,
+  AlertCircle,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  BookOpen,
+} from "lucide-react";
 import axios from "axios";
-import { useNavigate } from 'react-router-dom';
-import { useRole } from '../strore/useRole';
-import { useAuth } from '../strore/useAuth';
+import { Navigate, useNavigate } from "react-router-dom";
+import { RoleType, useRole } from "../strore/useRole";
+import { useAuth } from "../strore/useAuth";
 
 export default function SigninPage() {
-  const [formData, setFormData] = useState({ email: '', password: '', role: '' })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    role: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  const userRole = useRole((state) => state.role);
   const setUserRole = useRole((state) => state.setRole);
-
-  const isLoggedin = useAuth((state) => state.isLoggedin);
-  const setIsLoggedin = useAuth((state) => state.setIsLoggedin);
-
+  const login = useAuth((state) => state.login);
+  const isLoggedIn = useAuth((state) => state.isLoggedIn);
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-    setErrors({ ...errors, [e.target.name]: '' })
-  }
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
+  };
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.email) newErrors.email = 'email is required'
-    if (!formData.password) newErrors.password = 'Password is required'
-    if (!formData.role) newErrors.role = 'Role selection is required'
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    const newErrors: Record<string, string> = {};
+    if (!formData.email) newErrors.email = "email is required";
+    if (!formData.password) newErrors.password = "Password is required";
+    if (!formData.role) newErrors.role = "Role selection is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (validateForm()) {
-      setIsSubmitting(true)
+      setIsSubmitting(true);
       try {
-        const res = await axios.post("http://localhost:3000/api/v1/auth/signin",{
-            email  : formData.email,
-            password :formData.password,
-            role : formData.role
-        })
-        if(res.status === 200){
-            setIsLoggedin(true);
-            setUserRole(res.data.data.role);
-            navigate("/");
+        const res = await axios.post(
+          "http://localhost:3000/api/v1/auth/signin",
+          {
+            email: formData.email,
+            password: formData.password,
+            role: formData.role,
+          },
+          {
+            headers: { "Content-Type": "application/json" },
+            withCredentials: true,
+          }
+        );
+
+        if (res.status === 200) {
+          login();
+          const role = res.data.data.role;
+          if (role === "instructor") {
+            setUserRole(RoleType.instructor);
+          } else if (role === "student") {
+            setUserRole(RoleType.student);
+          }
+          navigate("/");
         }
       } catch (error) {
-        
-      } finally{
+      } finally {
         setIsSubmitting(false);
       }
     }
+  };
+
+  function handleLoginGoogle() {
+    window.open(
+      "https://prawn-intense-crane.ngrok-free.app/api/v1/auth/google"
+    );
   }
 
-
-  function handleLoginGoogle(){
-    window.open("https://prawn-intense-crane.ngrok-free.app/api/v1/auth/google")
+  async function handleGoogleSignin(e: React.FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      handleLoginGoogle();
+    } catch (error) {
+      console.log("Google signin error is", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
-  async function handleGoogleSignin(e : React.FormEvent){
-      e.preventDefault();
-      setIsSubmitting(true);
-      try {
-        handleLoginGoogle();
-      } catch (error) { 
-        console.log("Google signin error is",error)
-      }finally{
-        setIsSubmitting(false);
-      }
+  if (isLoggedIn) {
+    return <Navigate to="/" />;
   }
 
   return (
@@ -82,8 +109,11 @@ export default function SigninPage() {
         <div className="bg-zinc-800 p-8 rounded-lg shadow-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-1">
-                Email 
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-zinc-300 mb-1"
+              >
+                Email
               </label>
               <div className="relative">
                 <input
@@ -95,7 +125,10 @@ export default function SigninPage() {
                   className="w-full px-4 py-2 bg-zinc-700 text-zinc-100 rounded-md pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
                   placeholder="Enter your email"
                 />
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={18} />
+                <User
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400"
+                  size={18}
+                />
               </div>
               {errors.emailOremail && (
                 <p className="text-red-500 text-sm mt-1 flex items-center">
@@ -104,7 +137,10 @@ export default function SigninPage() {
               )}
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-zinc-300 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-zinc-300 mb-1"
+              >
                 Password
               </label>
               <div className="relative">
@@ -117,7 +153,10 @@ export default function SigninPage() {
                   className="w-full px-4 py-2 bg-zinc-700 text-zinc-100 rounded-md pl-10 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
                   placeholder="Enter your password"
                 />
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400" size={18} />
+                <Lock
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-400"
+                  size={18}
+                />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -142,24 +181,54 @@ export default function SigninPage() {
                     type="radio"
                     name="role"
                     value="student"
-                    checked={formData.role === 'student'}
+                    checked={formData.role === "student"}
                     onChange={handleChange}
                     className="sr-only"
                   />
-                  <BookOpen size={18} className={`mr-2 ${formData.role === 'student' ? 'text-blue-500' : 'text-zinc-400'}`} />
-                  <span className={formData.role === 'student' ? 'text-blue-500' : 'text-zinc-300'}>Student</span>
+                  <BookOpen
+                    size={18}
+                    className={`mr-2 ${
+                      formData.role === "student"
+                        ? "text-blue-500"
+                        : "text-zinc-400"
+                    }`}
+                  />
+                  <span
+                    className={
+                      formData.role === "student"
+                        ? "text-blue-500"
+                        : "text-zinc-300"
+                    }
+                  >
+                    Student
+                  </span>
                 </label>
                 <label className="flex-1 flex items-center justify-center bg-zinc-700 rounded-md p-3 cursor-pointer transition-all duration-300 hover:bg-zinc-600">
                   <input
                     type="radio"
                     name="role"
-                    value="Educator"
-                    checked={formData.role === 'Educator'}
+                    value="instructor"
+                    checked={formData.role === "instructor"}
                     onChange={handleChange}
                     className="sr-only"
                   />
-                  <GraduationCap size={18} className={`mr-2 ${formData.role === 'Educator' ? 'text-blue-500' : 'text-zinc-400'}`} />
-                  <span className={formData.role === 'Educator' ? 'text-blue-500' : 'text-zinc-300'}>Educator</span>
+                  <GraduationCap
+                    size={18}
+                    className={`mr-2 ${
+                      formData.role === "instructor"
+                        ? "text-blue-500"
+                        : "text-zinc-400"
+                    }`}
+                  />
+                  <span
+                    className={
+                      formData.role === "instructor"
+                        ? "text-blue-500"
+                        : "text-zinc-300"
+                    }
+                  >
+                    instructor
+                  </span>
                 </label>
               </div>
               {errors.role && (
@@ -189,11 +258,13 @@ export default function SigninPage() {
                 <div className="w-full border-t border-zinc-600"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-zinc-800 text-zinc-400">Or continue with</span>
+                <span className="px-2 bg-zinc-800 text-zinc-400">
+                  Or continue with
+                </span>
               </div>
             </div>
             <button
-              onClick={(e) =>handleGoogleSignin(e)}
+              onClick={(e) => handleGoogleSignin(e)}
               className="mt-4 w-full bg-zinc-700 text-zinc-200 py-2 px-4 rounded-md hover:bg-zinc-600 transition-colors duration-300 flex items-center justify-center"
             >
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -220,13 +291,12 @@ export default function SigninPage() {
           </div>
         </div>
         <p className="mt-6 text-center text-zinc-400">
-          Don&apos;t have an account?{' '}
+          Don&apos;t have an account?{" "}
           <a href="/signup" className="text-blue-400 hover:underline">
             Sign up
           </a>
         </p>
       </div>
     </div>
-  )
+  );
 }
-
