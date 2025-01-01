@@ -14,6 +14,6 @@ export const SigninSchema =z.object({
 })
 
 export const CreateRoomSchema = z.object({
-    title : z.string(),
+    roomname : z.string(),
     description : z.string()
 })

@@ -9,9 +9,15 @@ enum RoomStatus {
   Active = "active",
 }
 
+export enum RoomState {
+  Video = "switch_to_video",
+  ExcaliDraw = "switch_to_excalidraw"  
+}
+
 interface RoomDetails {
   status: RoomStatus;
   users: WebSocket[];
+  state : RoomState
 }
 
 export const roomsInfo = new Map<string, RoomDetails>(); //<RoomId,[user1,user2...]>
@@ -58,6 +64,7 @@ export async function handleJoinRoom(
         status:
           role === RoleType.instructor ? RoomStatus.Active : RoomStatus.Waiting,
         users: [],
+        state : RoomState.Video
       };
       roomsInfo.set(roomId, room);
     }
@@ -68,7 +75,7 @@ export async function handleJoinRoom(
     ) {
       room.users = [...room.users, ws];
       ws.send(
-        JSON.stringify({ msg: "wait for the admin to join the meeting" })
+        JSON.stringify({ msg: "wait for the admin to join the meeting", state : room.state })
       );
       return;
     }
@@ -88,8 +95,9 @@ export async function handleJoinRoom(
 
     if (room) {
       room.users = [...room.users, ws];
-      ws.send(JSON.stringify({ msg: "You joined the meeting" }));
+      ws.send(JSON.stringify({ msg: "You joined the meeting", state : room.state }));
     }
+    console.log("the room data is", room);
   } catch (error) {
     //  console.log(error);
     ws.send(JSON.stringify({ msg: "Something went wrong, ws" }));

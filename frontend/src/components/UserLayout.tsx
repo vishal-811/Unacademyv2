@@ -38,18 +38,21 @@ export default function UserLayout() {
 
     socket.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
-      console.log("Receiver side", parsedMessage);
-      const { msg } = parsedMessage;
+      const { msg, state } = parsedMessage;
       if (!msg) return;
-      const { data } = msg;
-      if (data !== undefined && (data === "video" || data === "excalidraw")) {
+      let { data } = msg;
+      
+      if(state){
+       let currState = state === "switch_to_video" ? "video" :"excalidraw"
+       data = currState;
+      } 
+      if(data !== undefined && (data === "video" || data === "excalidraw")) {
         const currentScreen = data;
         currentScreen === "video"
           ? setActiveScreen("video")
           : setActiveScreen("excalidraw");
       } else if (data) {
         const appState = data;
-        console.log("the dummy data is", appState);
         const dummyApp = { ...appState, collaborators: [] };
         const dummyData = { appState: dummyApp, elements: data.elements };
         setExcalidrawData(dummyData);

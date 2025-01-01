@@ -18,6 +18,7 @@
     "cookie-parser": "^1.4.7",
     "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
+    "livekit-server-sdk": "^2.9.4",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "zod": "^3.24.1"

@@ -3,7 +3,7 @@ import HomePage from "./pages/HomePage";
 import SigninPage from "./pages/Signin";
 import ProtectedRoute from "./protectedRoute";
 import Layout from "./pages/Layout";
-import { CreateRoom } from "./pages/CreateRoom";
+import CreateRoom from "./pages/CreateRoom";
 
 const router = createBrowserRouter([
   {

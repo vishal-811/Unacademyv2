@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { SwitchEvent } from "../types";
-import { roomsInfo } from "../room/RoomManager";
+import { roomsInfo, RoomState } from "../room/RoomManager";
 import { BroadCastMessage } from "../lib/utils";
 
 export const  handleSwitchEvent = (data: SwitchEvent, ws: WebSocket) => {
@@ -17,10 +17,13 @@ export const  handleSwitchEvent = (data: SwitchEvent, ws: WebSocket) => {
     }
     switch (eventType) {
         case "switch_to_video" :{
+            // Store the state of the room 
+            room.state = RoomState.Video;
             BroadCastMessage(roomId, ws, {msg :"switch to video successfully", data: "video"});
           break;
         }
         case "switch_to_excalidraw" :{
+            room.state = RoomState.ExcaliDraw;
             BroadCastMessage(roomId, ws, {msg :"switch to excalidraw successfully", data :"excalidraw"});
         }
     }

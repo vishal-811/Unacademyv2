@@ -18,8 +18,6 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction){
         if(!isVerified){
             return ApiResponse(res, 401, false, "Invalid token");
         }
-        console.log("the req.user log", req.user);
-        console.log("the is verifid log", isVerified);
          req.user = isVerified;
         next();
     }

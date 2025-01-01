@@ -3,6 +3,7 @@ import prisma from "../lib";
 import { CreateRoomSchema } from "../schemas/ZodSchema";
 import { authMiddleware } from "../middleware";
 import { ApiResponse, ApiSuccessResponse } from "../lib/apiResponse";
+import { AccessToken } from "livekit-server-sdk";
 const router = Router();
 
 router.post(
@@ -13,6 +14,7 @@ router.post(
         if (!CreateRoomPayload.success) return ApiResponse(res, 401, false, "Please Provide all the inputs fields");
 
         try {
+            console.log("the request user is", req.user);
             let userId = req.session.userId;
 
             if(!userId){
@@ -34,17 +36,26 @@ router.post(
 
             if (userDetails.role !== "instructor") return ApiResponse(res, 401, false, "Only admin can create a room")
 
-            const { title, description } = CreateRoomPayload.data;
+            const { roomname, description } = CreateRoomPayload.data;
+
+            const at = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
+                identity : userId,
+                ttl : "10m"
+            })
+            at.addGrant({ roomJoin: true, room: roomname });
+            const token = await at.toJwt();
+
             const room = await prisma.room.create({
                 data: {
-                    roomTitle: title,
+                    roomName: roomname,
                     description: description,
                     creatorId: userId,
                 },
             });
 
-            return ApiSuccessResponse(res, 201, true, "Room created Successfully", { roomId: room.id });
+            return ApiSuccessResponse(res, 201, true, "Room created Successfully",{ roomId: room.id , liveKitToken : token} );  
         } catch (error) {
+            console.log("the error is", error);
             return ApiResponse(res, 500, false, "Internal server Error");
         }
     }
