@@ -2,8 +2,10 @@ import { createBrowserRouter } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import SigninPage from "./pages/Signin";
 import ProtectedRoute from "./protectedRoute";
-import Layout from "./pages/Layout";
+import Layout from "./components/Layout";
 import CreateRoom from "./pages/CreateRoom";
+import SignupPage from "./pages/Signup";
+import JoinRoom from "./pages/JoinRoom";
 
 const router = createBrowserRouter([
   {
@@ -16,14 +18,14 @@ const router = createBrowserRouter([
   },
   {
     path: "/signup",
-    element: <SigninPage />,
+    element: <SignupPage/>,
   },
   {
     element: <ProtectedRoute />,
     children: [
       {
-        path: "/layout",
-        element: <Layout />,
+        path: "/room/:RoomId",
+        element: <JoinRoom/>,
       },
       {
         path: "/createRoom",

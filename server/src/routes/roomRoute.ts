@@ -61,4 +61,27 @@ router.post(
     }
 );
 
+
+router.get("/roomExist/:roomId",authMiddleware,async (req,res) => {
+    const roomId = req.params.roomId;
+    if(!roomId){
+        return ApiResponse(res,401,false,"please provide a roomId");
+    }
+
+    try {
+        const isRoomExist = await prisma.room.findFirst({
+            where :{
+                id : roomId
+            }
+        })
+        if(!isRoomExist){
+            return ApiResponse(res,404,false,"No room exist with this roomId");
+        }
+    
+        return ApiSuccessResponse(res,200,true,"ok",{});
+    } catch (error) {
+        return ApiResponse(res,500,false,"Internal server error");
+    }
+})
+
 export default router;

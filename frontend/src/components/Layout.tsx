@@ -1,6 +1,6 @@
-import AdminLayout from "../components/AdminLayout";
-import Navbar from "../components/Navbar";
-import UserLayout from "../components/UserLayout";
+import AdminLayout from "./AdminLayout";
+import Navbar from "./Navbar";
+import UserLayout from "./UserLayout";
 import { RoleType, useRole } from "../strore/useRole";
 
 export default function Layout() {

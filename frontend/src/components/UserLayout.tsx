@@ -6,23 +6,31 @@ import { Maximize2 } from "lucide-react";
 import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
+import { useParams } from "react-router-dom";
 
 export default function UserLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<"excalidraw" | "video">(
     "video"
   );
-  const [roomId, setRoomId] = useState<string | null>(
-    "2e674758-2615-4a12-a553-f7b43255439d"
-  );
+  const [roomId, setRoomId] = useState<string | null>(null);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
 
+  const { RoomId } = useParams();
+  console.log("The roomId from the", RoomId);
+  
+  useEffect(() => {
+    if(RoomId){
+      setRoomId(RoomId);
+    }
+  }, [RoomId]);
+
   useEffect(() => {
     const token_url = Cookies.get("token");
-
+    
     const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
-
+     console.log("check the roomId is", roomId);
     socket.onopen = () => {
       socket.send(
         JSON.stringify({
@@ -37,6 +45,7 @@ export default function UserLayout() {
     setSocket(socket);
 
     socket.onmessage = (message: any) => {
+      console.log("the message we got is", message);
       const parsedMessage = JSON.parse(message.data);
       const { msg, state } = parsedMessage;
       if (!msg) return;
@@ -55,6 +64,7 @@ export default function UserLayout() {
         const appState = data;
         const dummyApp = { ...appState, collaborators: [] };
         const dummyData = { appState: dummyApp, elements: data.elements };
+        console.log("the dummy data is", dummyData);
         setExcalidrawData(dummyData);
       }
     };
@@ -69,7 +79,7 @@ export default function UserLayout() {
     //     })
     //   );
     // };
-  }, []);
+  }, [roomId]);
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4">

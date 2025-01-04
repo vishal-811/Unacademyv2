@@ -1,20 +1,37 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiLink, FiCopy, FiShare2 } from 'react-icons/fi'
+import { FiCopy, FiShare2 } from 'react-icons/fi'
+import axios from "axios"
+import { useNavigate } from 'react-router-dom'
+import { useExcaliRoomId } from '../strore/useExcaliRoomId'
 
 export default function CreateRoom() {
   const [roomName, setRoomName] = useState('')
   const [description, setDescription] = useState('')
   const [roomLink, setRoomLink] = useState('')
   const [isCreating, setIsCreating] = useState(false)
+  const [roomId, setRoomId]  = useState<string | null>(null)
+
+  const navigate = useNavigate();
+
+  const setExcaliRoomId = useExcaliRoomId((state) => state.setExcaliRoomId);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsCreating(true)
-    // Simulate room creation
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    const generatedId = Math.random().toString(36).substring(2, 10)
-    setRoomLink(`https://yourapp.com/room/${generatedId}`)
+    const res = await axios.post("http://localhost:3000/api/v1/room/createRoom",{
+        roomname : roomName,
+        description : description
+    },{
+      withCredentials : true
+    }) 
+    if(res.status === 201){
+      const roomId = res.data.data.roomId;
+      setRoomLink(`https://yourapp.com/room/${roomId}`)
+      setRoomId(roomId);
+      setExcaliRoomId(roomId)
+    }
+    
     setIsCreating(false)
   }
 
@@ -124,7 +141,7 @@ export default function CreateRoom() {
                 </div>
               </motion.div>
               <button
-                onClick={() => setRoomLink('')}
+                onClick={() => navigate(`/room/${roomId}`)}
                 className="w-full py-2 px-4 rounded-md bg-blue-600 text-white font-semibold hover:bg-blue-700 transition duration-300"
               >
                 Join this room

@@ -5,10 +5,10 @@ import { useExcaliData } from "../strore/useExcaliData";
 import { useEffect, useState } from "react";
 import {
   AppState,
-  ExcalidrawImperativeAPI,
-  BinaryFiles,
+  ExcalidrawImperativeAPI
 } from "@excalidraw/excalidraw/types/types";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
+import { useExcaliRoomId } from "../strore/useExcaliRoomId";
 
 
 export function ExcalidrawComponent() {
@@ -16,11 +16,13 @@ export function ExcalidrawComponent() {
   const socket = useSocket((state) => state.socket);
   const roleStore = useRole();
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI>();
+  
+  const ExcaliRoomId = useExcaliRoomId((state) => state.ExcaliRoomId);
 
+  console.log("the excaliroomid", ExcaliRoomId);
   const handleChange = (
     elements: readonly ExcalidrawElement[],
     appState: AppState,
-    files: BinaryFiles
   ) => {
     if (roleStore.role === RoleType.student) return;
     if (socket && socket.readyState === WebSocket.OPEN) {
@@ -28,7 +30,7 @@ export function ExcalidrawComponent() {
         JSON.stringify({
           type: "excali_draw_event",
           data: {
-            roomId: "2e674758-2615-4a12-a553-f7b43255439d",
+            roomId: ExcaliRoomId ,
             excaliEvent: { elements: elements, appState: appState },
           },
         })

@@ -14,6 +14,7 @@ import {
 import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
+import { useParams } from "react-router-dom";
 
 export default function AdminLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
@@ -21,12 +22,17 @@ export default function AdminLayout() {
     "excalidraw" | "screenshare" | "video"
   >("video");
 
-  const [roomId, setRoomId] = useState<string | null>(
-    "2e674758-2615-4a12-a553-f7b43255439d"
-  );
+  const [roomId, setRoomId] = useState<string | null>(null);
   const socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
+
+  const { RoomId } = useParams();
+  useEffect(() => {
+    if(RoomId){
+      setRoomId(RoomId);
+     }
+  },[RoomId])
 
   const handleSendEvent = (type: string) => {
     if (!socket) return;
