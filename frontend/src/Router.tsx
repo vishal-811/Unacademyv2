@@ -2,7 +2,6 @@ import { createBrowserRouter } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import SigninPage from "./pages/Signin";
 import ProtectedRoute from "./protectedRoute";
-import Layout from "./components/Layout";
 import CreateRoom from "./pages/CreateRoom";
 import SignupPage from "./pages/Signup";
 import JoinRoom from "./pages/JoinRoom";

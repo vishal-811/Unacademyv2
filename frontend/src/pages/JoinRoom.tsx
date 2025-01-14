@@ -2,12 +2,13 @@ import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom";
 import Layout from "../components/Layout";
 import axios from "axios";
+import { useRoomJoin } from "../strore/useRoomJoin";
 
 export default function JoinRoom(){
     const { RoomId } = useParams<{RoomId : string}>();
     const [isValidRoom, setIsValidRoom] = useState<boolean>(false);
     
-    console.log("the roomId is", RoomId);
+    const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
     useEffect(() => {
         
         async function isRoomExist(){
@@ -17,6 +18,7 @@ export default function JoinRoom(){
 
             if(res.status === 200){
                 setIsValidRoom(true);
+                setIsRoomJoined(true);
             }
         }
 

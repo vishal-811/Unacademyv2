@@ -2,6 +2,8 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { useRef } from "react";
 import Navbar from "../components/Navbar";
+import { useIsJoinRoomClicked } from "../strore/useRoomJoin";
+import { JoinRoomModal } from "../components/JoinRoomModal";
 
 export default function LandingPage() {
   const targetRef = useRef(null);
@@ -14,12 +16,14 @@ export default function LandingPage() {
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
   const y = useTransform(scrollYProgress, [0, 0.5], [0, -50]);
 
+  const isRoomJoinButtonClick = useIsJoinRoomClicked((state) => state.isJoinRoomClicked);
+
   return (
     <>
     <Navbar/>
     <div className="min-h-screen bg-zinc-900 text-zinc-100 overflow-hidden">
       <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-
+         {isRoomJoinButtonClick && <JoinRoomModal/>} 
       <motion.div
         ref={targetRef}
         style={{ opacity, scale, y }}

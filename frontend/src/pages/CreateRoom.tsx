@@ -27,7 +27,7 @@ export default function CreateRoom() {
     }) 
     if(res.status === 201){
       const roomId = res.data.data.roomId;
-      setRoomLink(`https://yourapp.com/room/${roomId}`)
+      setRoomLink(`http://localhost:5173/room/${roomId}`)
       setRoomId(roomId);
       setExcaliRoomId(roomId)
     }
