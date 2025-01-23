@@ -30,7 +30,8 @@ export default function UserLayout() {
     const token_url = Cookies.get("token");
     
     const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
-     console.log("check the roomId is", roomId);
+     
+    console.log("the user connected to the Socket")
     socket.onopen = () => {
       socket.send(
         JSON.stringify({
@@ -69,16 +70,16 @@ export default function UserLayout() {
       }
     };
 
-    // socket.onclose = () => {
-    //   socket.send(
-    //     JSON.stringify({
-    //       type: "leave_room",
-    //       data: {
-    //         roomId: roomId,
-    //       },
-    //     })
-    //   );
-    // };
+    socket.onclose = () => {
+      socket.send(
+        JSON.stringify({
+          type: "leave_room",
+          data: {
+            roomId: roomId,
+          },
+        })
+      );
+    };
   }, [roomId]);
 
   return (

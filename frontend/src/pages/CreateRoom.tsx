@@ -27,7 +27,7 @@ export default function CreateRoom() {
     }) 
     if(res.status === 201){
       const roomId = res.data.data.roomId;
-      setRoomLink(`http://localhost:5173/room/${roomId}`)
+      setRoomLink(`${roomId}`)
       setRoomId(roomId);
       setExcaliRoomId(roomId)
     }
@@ -41,7 +41,7 @@ export default function CreateRoom() {
   }
 
   const shareLink = () => {
-    // Implement your preferred sharing mechanism here
+    // Pending the share link via  various platforms 
     alert(`Share this link: ${roomLink}`)
   }
 

@@ -11,8 +11,8 @@ export function handleWebsocketMessageEvent(
   ws: WebSocket,
   userToken: UserTokenData
 ) {
+  console.log("hit the handle websocket message function")
   const parsedData = JSON.parse(message.toString());
-  console.log("the data from the sender side is", parsedData);
   const { type, data } = parsedData;
   const { id, role } = userToken;
 
@@ -22,6 +22,7 @@ export function handleWebsocketMessageEvent(
       break;
     }
     case "leave_room": {
+      console.log("hit the switch case to leave the room")
       handleLeaveRoom(data, ws, role);
       break;
     }

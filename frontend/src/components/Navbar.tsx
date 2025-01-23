@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Book, Users, Calendar, User, Menu, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useRole } from '../strore/useRole';
 import { useAuth } from '../strore/useAuth';
 import { useIsJoinRoomClicked, useRoomJoin } from '../strore/useRoomJoin';
+import { useSocket } from '../strore/useSocket';
 
 const navItems = [
   { name: 'Courses', href: '/courses', icon: Book },
@@ -18,8 +19,12 @@ const Navbar = () => {
   const isLoggedIn = useAuth((state) => state.isLoggedIn);
   const isRoomJoined = useRoomJoin((state) => state.isRoomJoined);
   const SetisRoomJoinButtonClick = useIsJoinRoomClicked((state) => state.setIsJoinRoomClicked);
-  // const isRoomJoinButtonClick = useIsJoinRoomClicked((state) => state.isJoinRoomClicked);
+  const socket = useSocket((state) => state.socket);
+  const setSocket = useSocket((state) => state.setSocket);
+  const { RoomId } = useParams()
+   console.log("your roomId is",RoomId);
   const navigate = useNavigate();
+  
 
   const renderButton = () => {
     if (!isLoggedIn) {
@@ -37,7 +42,19 @@ const Navbar = () => {
     if (userRole === 'student') {
       return isRoomJoined ? (
         <button
-          onClick={() => navigate('/leave-room')}
+          onClick={() => {
+            socket?.send(
+              JSON.stringify({
+                type: "leave_room",
+                data: {
+                  roomId: RoomId,
+                },
+              })
+            );
+            socket?.close()
+            setSocket(null);
+            console.log("The socket is closed sucessfully")
+          }}
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300"
         >
           Leave Room
