@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Book, Users, Calendar, User, Menu, X } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useRole } from '../strore/useRole';
-import { useAuth } from '../strore/useAuth';
-import { useIsJoinRoomClicked, useRoomJoin } from '../strore/useRoomJoin';
-import { useSocket } from '../strore/useSocket';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Book, Users, Calendar, User, Menu, X } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useRole } from "../strore/useRole";
+import { useAuth } from "../strore/useAuth";
+import { useIsJoinRoomClicked, useRoomJoin } from "../strore/useRoomJoin";
+import { useSocket } from "../strore/useSocket";
 
 const navItems = [
-  { name: 'Courses', href: '/courses', icon: Book },
-  { name: 'Teachers', href: '/teachers', icon: Users },
-  { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: "Courses", href: "/courses", icon: Book },
+  { name: "Teachers", href: "/teachers", icon: Users },
+  { name: "Schedule", href: "/schedule", icon: Calendar },
 ];
 
 const Navbar = () => {
@@ -18,19 +18,20 @@ const Navbar = () => {
   const userRole = useRole((state) => state.role);
   const isLoggedIn = useAuth((state) => state.isLoggedIn);
   const isRoomJoined = useRoomJoin((state) => state.isRoomJoined);
-  const SetisRoomJoinButtonClick = useIsJoinRoomClicked((state) => state.setIsJoinRoomClicked);
+  const SetisRoomJoinButtonClick = useIsJoinRoomClicked(
+    (state) => state.setIsJoinRoomClicked
+  );
+  const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
   const socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
-  const { RoomId } = useParams()
-   console.log("your roomId is",RoomId);
+  const { RoomId } = useParams();
   const navigate = useNavigate();
-  
 
   const renderButton = () => {
     if (!isLoggedIn) {
       return (
         <button
-          onClick={() => navigate('/signin')}
+          onClick={() => navigate("/signin")}
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
         >
           <User className="h-4 w-5" />
@@ -39,7 +40,7 @@ const Navbar = () => {
       );
     }
 
-    if (userRole === 'student') {
+    if (userRole === "student") {
       return isRoomJoined ? (
         <button
           onClick={() => {
@@ -51,9 +52,10 @@ const Navbar = () => {
                 },
               })
             );
-            socket?.close()
+            socket?.close();
             setSocket(null);
-            console.log("The socket is closed sucessfully")
+            setIsRoomJoined(false);
+            navigate("/")
           }}
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300"
         >
@@ -61,7 +63,7 @@ const Navbar = () => {
         </button>
       ) : (
         <button
-          onClick={() => SetisRoomJoinButtonClick(true)} 
+          onClick={() => SetisRoomJoinButtonClick(true)}
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
         >
           Join Room
@@ -71,12 +73,14 @@ const Navbar = () => {
 
     return (
       <button
-        onClick={() => navigate('/createroom')}
+        onClick={() => navigate("/createroom")}
         className={`flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
-          isRoomJoined ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+          isRoomJoined
+            ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
         } transition-colors duration-300`}
       >
-        {isRoomJoined ? 'Leave Room' : 'Create Room'}
+        {isRoomJoined ? "Leave Room" : "Create Room"}
       </button>
     );
   };
@@ -108,7 +112,11 @@ const Navbar = () => {
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-blue-600 hover:text-white hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-all duration-300"
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
             </button>
           </div>
         </div>
@@ -116,7 +124,7 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       <motion.div
-        className={`md:hidden ${isOpen ? 'block' : 'hidden'}`}
+        className={`md:hidden ${isOpen ? "block" : "hidden"}`}
         initial={{ opacity: 0, y: -50 }}
         animate={{ opacity: isOpen ? 1 : 0, y: isOpen ? 0 : -50 }}
         transition={{ duration: 0.3 }}
@@ -134,7 +142,7 @@ const Navbar = () => {
             </a>
           ))}
           <button
-            onClick={() => navigate('/signin')}
+            onClick={() => navigate("/signin")}
             className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-300"
           >
             <User className="w-5 h-5 mr-2" />

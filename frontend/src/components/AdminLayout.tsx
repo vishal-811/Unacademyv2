@@ -15,6 +15,15 @@ import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
+// import { MediaController } from "./MediaController";
+import {
+  createLocalAudioTrack,
+  createLocalVideoTrack,
+  Room,
+} from "livekit-client";
+import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
+import { useLiveKitToken } from "../strore/useLiveKitToken";
+import { useRef } from "react";
 
 export default function AdminLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
@@ -26,13 +35,82 @@ export default function AdminLayout() {
   const socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
+  const liveKitToken = useLiveKitToken((state) => state.liveKitToken);
 
   const { RoomId } = useParams();
+
+  const roomRef = useRef<Room | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
-    if(RoomId){
-      setRoomId(RoomId);
-     }
-  },[RoomId])
+    if (!RoomId) return;
+    setRoomId(RoomId);
+
+
+    const token_url = Cookies.get("token");
+
+    const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+    socket.onopen = () => {
+      socket.send(
+        JSON.stringify({
+          type: "join_room",
+          data: {
+            roomId: RoomId,
+          },
+        })
+      );
+    };
+
+    setSocket(socket);
+
+    socket.onmessage = (message: any) => {
+      if (!message.data.message) return;
+      setExcalidrawData(JSON.parse(message.data.msg));
+    };
+
+    (async () => {
+      if (!liveKitToken) return;
+
+      try {
+        const room = await JoinLiveKitServer(liveKitToken, roomRef);
+        roomRef.current = room;
+
+        if (!room) {
+          return;
+        }
+
+        await room.localParticipant.setCameraEnabled(true);
+        await room.localParticipant.setMicrophoneEnabled(true);
+
+        const videoTrack = await createLocalVideoTrack({ facingMode: "user" });
+        const audioTrack = await createLocalAudioTrack({
+          echoCancellation: true,
+          noiseSuppression: true,
+        });
+
+        console.log("the video track is", videoTrack);
+        videoTrack.attach(videoRef.current!);
+        audioTrack.attach(audioRef.current!);
+
+        await room.localParticipant.publishTrack(videoTrack);
+        await room.localParticipant.publishTrack(audioTrack);
+      } catch (error) {
+        console.error("An error occurred during LiveKit setup:", error);
+      }
+    })();
+
+    return () => {
+      socket.close();
+
+      if (roomRef.current) {
+        roomRef.current.localParticipant.setCameraEnabled(false);
+        roomRef.current.localParticipant.setMicrophoneEnabled(false);
+        roomRef.current.disconnect();
+        roomRef.current = null;
+      }
+    };
+  }, [RoomId, liveKitToken]);
 
   const handleSendEvent = (type: string) => {
     if (!socket) return;
@@ -47,47 +125,12 @@ export default function AdminLayout() {
     );
   };
 
-  useEffect(() => {
-    const token_url = Cookies.get("token");
-
-    const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
-
-    socket.onopen = () => {
-      socket.send(
-        JSON.stringify({
-          type: "join_room",
-          data: {
-            roomId: roomId,
-          },
-        })
-      );
-    };
-
-    setSocket(socket);
-
-    socket.onmessage = (message: any) => {
-      if (!message.data.message) return;
-      setExcalidrawData(JSON.parse(message.data.msg));
-    };
-
-    socket.onclose = () => {
-      socket.send(
-        JSON.stringify({
-          type: "leave_room",
-          data: {
-            roomId: roomId,
-          },
-        })
-      );
-    };
-  }, []);
-
   return (
     <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4">
       <div className="flex flex-col sm:flex-row h-[calc(100%-4rem)] space-y-4 sm:space-y-0 sm:space-x-4">
         {/* Main screen */}
         <motion.div
-          layout
+          layout={false}
           className={`border border-primary rounded-lg overflow-hidden ${
             hidepanel ? "w-full sm:w-[80%]" : "w-full"
           }`}
@@ -99,8 +142,14 @@ export default function AdminLayout() {
             </div>
           )}
           {activeScreen === "video" && (
-            <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-              Video Call
+            <div className="w-full h-full">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full"
+              />
+              <audio ref={audioRef} autoPlay />
             </div>
           )}
         </motion.div>
@@ -175,8 +224,14 @@ export default function AdminLayout() {
       {/* Small screen video overlay */}
       {activeScreen !== "video" && (
         <div className="fixed top-14 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
-          <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-            Video Preview
+          <div className="w-full h-full">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full"
+            />
+            <audio ref={audioRef} autoPlay />
           </div>
         </div>
       )}

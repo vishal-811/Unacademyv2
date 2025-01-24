@@ -7,6 +7,22 @@ import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
+import {
+  RemoteParticipant,
+  RemoteTrack,
+  RemoteTrackPublication,
+  Room,
+  RoomEvent,
+} from "livekit-client";
+import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
+import { useRef } from "react";
+import axios, { AxiosResponse } from "axios";
+
+export interface liveKitTokenResponse{
+  data :{
+    liveKitToken : string
+  }
+}
 
 export default function UserLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
@@ -18,20 +34,21 @@ export default function UserLayout() {
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
 
   const { RoomId } = useParams();
-  console.log("The roomId from the", RoomId);
-  
-  useEffect(() => {
-    if(RoomId){
-      setRoomId(RoomId);
-    }
-  }, [RoomId]);
+
+  const roomRef = useRef<Room | null>(null);
+
+  let elements = null;
+
 
   useEffect(() => {
-    const token_url = Cookies.get("token");
+    if (RoomId) {
+      setRoomId(RoomId);
+    }
     
+    const token_url = Cookies.get("token");
+
     const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
-     
-    console.log("the user connected to the Socket")
+
     socket.onopen = () => {
       socket.send(
         JSON.stringify({
@@ -46,17 +63,16 @@ export default function UserLayout() {
     setSocket(socket);
 
     socket.onmessage = (message: any) => {
-      console.log("the message we got is", message);
       const parsedMessage = JSON.parse(message.data);
       const { msg, state } = parsedMessage;
       if (!msg) return;
       let { data } = msg;
-      
-      if(state){
-       let currState = state === "switch_to_video" ? "video" :"excalidraw"
-       data = currState;
-      } 
-      if(data !== undefined && (data === "video" || data === "excalidraw")) {
+
+      if (state) {
+        let currState = state === "switch_to_video" ? "video" : "excalidraw";
+        data = currState;
+      }
+      if (data !== undefined && (data === "video" || data === "excalidraw")) {
         const currentScreen = data;
         currentScreen === "video"
           ? setActiveScreen("video")
@@ -65,22 +81,44 @@ export default function UserLayout() {
         const appState = data;
         const dummyApp = { ...appState, collaborators: [] };
         const dummyData = { appState: dummyApp, elements: data.elements };
-        console.log("the dummy data is", dummyData);
         setExcalidrawData(dummyData);
       }
     };
 
-    socket.onclose = () => {
-      socket.send(
-        JSON.stringify({
-          type: "leave_room",
-          data: {
-            roomId: roomId,
-          },
-        })
-      );
+    (async () => {
+      const res : AxiosResponse<liveKitTokenResponse> = await axios.post(`http://localhost:3000/api/v1/room/generateToken`,{
+          roomId : RoomId,
+      },{
+        withCredentials : true
+      })
+      const liveKitToken = res.data.data.liveKitToken;
+      if (!liveKitToken) return;
+      const room = await JoinLiveKitServer(liveKitToken, roomRef);
+
+      if(!room){
+        console.log("failed to connect to the room")
+        return;
+      }
+
+      roomRef.current = room;
+
+      console.log("the room is", room);
+    })();
+
+    return () => {
+      socket.onclose = () => {
+        socket.send(
+          JSON.stringify({
+            type: "leave_room",
+            data: {
+              roomId: roomId,
+            },
+          })
+        );
+      };
+      roomRef?.current?.disconnect();
     };
-  }, [roomId]);
+  }, [RoomId]);
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4">
@@ -94,7 +132,7 @@ export default function UserLayout() {
         >
           {activeScreen === "video" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-              Video Call
+              <video ref={elements} autoPlay className="w-full h-full" />
             </div>
           )}
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}

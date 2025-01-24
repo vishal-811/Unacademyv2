@@ -11,13 +11,13 @@ enum RoomStatus {
 
 export enum RoomState {
   Video = "switch_to_video",
-  ExcaliDraw = "switch_to_excalidraw"  
+  ExcaliDraw = "switch_to_excalidraw",
 }
 
 interface RoomDetails {
   status: RoomStatus;
   users: WebSocket[];
-  state : RoomState
+  state: RoomState;
 }
 
 export const roomsInfo = new Map<string, RoomDetails>(); //<RoomId,[user1,user2...]>
@@ -64,7 +64,7 @@ export async function handleJoinRoom(
         status:
           role === RoleType.instructor ? RoomStatus.Active : RoomStatus.Waiting,
         users: [],
-        state : RoomState.Video
+        state: RoomState.Video,
       };
       roomsInfo.set(roomId, room);
     }
@@ -75,7 +75,10 @@ export async function handleJoinRoom(
     ) {
       room.users = [...room.users, ws];
       ws.send(
-        JSON.stringify({ msg: "wait for the admin to join the meeting", state : room.state })
+        JSON.stringify({
+          msg: "wait for the admin to join the meeting",
+          state: room.state,
+        })
       );
       return;
     }
@@ -95,7 +98,9 @@ export async function handleJoinRoom(
 
     if (room) {
       room.users = [...room.users, ws];
-      ws.send(JSON.stringify({ msg: "You joined the meeting", state : room.state }));
+      ws.send(
+        JSON.stringify({ msg: "You joined the meeting", state: room.state })
+      );
     }
   } catch (error) {
     //  console.log(error);
@@ -103,29 +108,26 @@ export async function handleJoinRoom(
   }
 }
 
-
 export function handleLeaveRoom(
   data: RoomEventData,
   ws: WebSocket,
   role: RoleType
 ) {
-     console.log("hitted the handle leave room function");
+  console.log("hitted the handle leave room function");
   try {
     const { roomId } = data;
-     console.log("the roomId is",roomId);
-     console.log("the websocket id is", ws);
     let room = roomsInfo.get(roomId)?.users;
     if (!room) {
       ws.send(JSON.stringify({ msg: "No room exist with this room Id" }));
       return;
     }
-  
+
     if (role === RoleType.instructor) {
       BroadCastMessage(roomId, ws, "Admin leave the meeting");
       ws.send(JSON.stringify({ msg: "you leave the meeting" }));
       return roomsInfo.delete(roomId);
     }
-    console.log("before the updation",room.length);
+    console.log("before the updation", room.length);
     room = room.filter((user: WebSocket) => {
       return user != ws;
     });
@@ -133,7 +135,6 @@ export function handleLeaveRoom(
     ws.send(JSON.stringify({ msg: "You leave the meeting" }));
     return;
   } catch (error) {
-    ws.send(JSON.stringify({ msg  :"Something went wrong, ws"}))
+    ws.send(JSON.stringify({ msg: "Something went wrong, ws" }));
   }
 }
-

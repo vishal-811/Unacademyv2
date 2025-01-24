@@ -17,3 +17,8 @@ export const CreateRoomSchema = z.object({
     roomname : z.string(),
     description : z.string()
 })
+
+
+export const GenerateLiveKitTokenSchema = z.object({
+    roomId : z.string()
+})
