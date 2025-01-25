@@ -15,10 +15,12 @@ export default async function GenerateLiveKitToken(
         ttl: "10m",
       }
     );
-    if (RoleType.instructor === "instructor") {
+    if (RoleType.instructor === role) {
+      console.log("admin route hitted");
       at.addGrant({ roomJoin: true, room: roomName, canPublish: true });
-    } else if (RoleType.student === "student") {
-      at.addGrant({ roomJoin: true, room: roomName, canPublish: false });
+    } else if (RoleType.student === role) {
+      console.log("user route hitted");
+      at.addGrant({ roomJoin: true, room: roomName, canPublish: false, canSubscribe : true });
     }
     const token = await at.toJwt();
     return token;

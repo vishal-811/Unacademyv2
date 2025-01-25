@@ -20,6 +20,8 @@ import {
   createLocalAudioTrack,
   createLocalVideoTrack,
   Room,
+  Track,
+  VideoPresets,
 } from "livekit-client";
 import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
 import { useLiveKitToken } from "../strore/useLiveKitToken";
@@ -74,6 +76,7 @@ export default function AdminLayout() {
 
       try {
         const room = await JoinLiveKitServer(liveKitToken, roomRef);
+        console.log("The room of livekit is",room);
         roomRef.current = room;
 
         if (!room) {
@@ -83,15 +86,28 @@ export default function AdminLayout() {
         await room.localParticipant.setCameraEnabled(true);
         await room.localParticipant.setMicrophoneEnabled(true);
 
-        const videoTrack = await createLocalVideoTrack({ facingMode: "user" });
+        const videoTrack = await createLocalVideoTrack({ facingMode: "user",  resolution: VideoPresets.h720 });
         const audioTrack = await createLocalAudioTrack({
           echoCancellation: true,
           noiseSuppression: true,
         });
-
-        console.log("the video track is", videoTrack);
+       
         videoTrack.attach(videoRef.current!);
         audioTrack.attach(audioRef.current!);
+
+        // if(!(videoRef.current?.srcObject instanceof MediaStream)) {
+        //   return
+        // }
+
+        // const videoTracks = videoRef.current.srcObject.getVideoTracks();
+
+        // console.log("the video tracks are", videoTracks);
+
+        // await room.localParticipant.publishTrack(videoTracks[0], {
+        //   name: 'mytrack',
+        //   simulcast: true,
+        //   source: Track.Source.Camera,
+        // });
 
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);

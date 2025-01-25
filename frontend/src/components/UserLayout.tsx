@@ -93,6 +93,7 @@ export default function UserLayout() {
       })
       const liveKitToken = res.data.data.liveKitToken;
       if (!liveKitToken) return;
+
       const room = await JoinLiveKitServer(liveKitToken, roomRef);
 
       if(!room){

@@ -1,17 +1,33 @@
-import { Room } from "livekit-client";
+import { RemoteTrack, Room, RoomEvent, VideoPresets } from "livekit-client";
 
-export async function JoinLiveKitServer(liveKitToken : string, roomRef : React.MutableRefObject<Room | null>): Promise<Room | null> {
-  console.log("join livekit server hitted");
+export async function JoinLiveKitServer(
+  liveKitToken: string,
+  roomRef: React.MutableRefObject<Room | null>
+): Promise<Room | null> {
+
   roomRef.current = null;
-
   if (!liveKitToken) return null;
-  const  room   = new Room();
+  const room = new Room({
+    adaptiveStream: true,
+    dynacast: true,
+    videoCaptureDefaults: {
+      resolution: VideoPresets.h720.resolution,
+    },
+  });
   roomRef.current = room;
+  roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
+  function handleTrackSubscribe(track: RemoteTrack) {
+    console.log(track);
+  }
   try {
-    console.log("the roomRef id is", roomRef);
-    await roomRef.current.prepareConnection("wss://unacademy-7fpyqjfj.livekit.cloud", liveKitToken);
-    await roomRef.current.connect("wss://unacademy-7fpyqjfj.livekit.cloud", liveKitToken);
-    console.log("Connected to the livekit server success");
+    await roomRef.current.prepareConnection(
+      "wss://unacademy-7fpyqjfj.livekit.cloud",
+      liveKitToken
+    );
+    await roomRef.current.connect(
+      "wss://unacademy-7fpyqjfj.livekit.cloud",
+      liveKitToken
+    );
     return roomRef.current;
   } catch (error) {
     console.log(`error while connecting to live kit server ${error}`);

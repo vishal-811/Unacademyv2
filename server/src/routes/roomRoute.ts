@@ -23,12 +23,11 @@ router.post(
       let userId = req.session.userId;
 
       if (!userId) {
-        // @ts-ignore
-        userId = req.user.userId;
+        userId = req.user?.userId;
       }
 
-      if (!userId)
-        return ApiResponse(res, 401, false, "Please provide  a userId");
+      if (!userId) return ApiResponse(res, 401, false, "Please provide  a userId");
+
       const userDetails = await prisma.user.findFirst({
         where: {
           id: userId,
@@ -82,17 +81,31 @@ router.post("/generateToken", authMiddleware, async (req: Request, res: Response
     
     const { roomId } = validateInput.data;
 
-    let userId = req.session.userId;
+    let userId = req.session.userId || req.user?.userId;
+    if(!userId){
+      throw new Error("Please provide a user Id");
+    }
+     console.log("the user id is", userId);
+    const roomExist = await prisma.room.findFirst({
+      where: {
+        id : roomId
+      }
+    })
+
+    if(!roomExist){
+      return ApiResponse(res,404,false,"No room exist with this roomId");
+    }
+
     const userExist = await prisma.user.findFirst({
       where: {
         id: userId,
       },
     });
-
+    
     if (!userExist) {
       return ApiResponse(res, 401, false, "No user exist with this userId");
     }
-
+    
     const liveKitToken = await GenerateLiveKitToken(
       roomId,
       userExist.id,
@@ -127,7 +140,7 @@ router.get(
       }
 
       return ApiSuccessResponse(res, 200, true, "ok", {});
-    } catch (error) {
+    } catch (error : unknown) {
       return ApiResponse(res, 500, false, "Internal server error");
     }
   }
