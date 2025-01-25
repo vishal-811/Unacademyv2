@@ -82,18 +82,9 @@ router.post("/generateToken", authMiddleware, async (req: Request, res: Response
     const { roomId } = validateInput.data;
 
     let userId = req.session.userId || req.user?.userId;
+
     if(!userId){
       throw new Error("Please provide a user Id");
-    }
-     console.log("the user id is", userId);
-    const roomExist = await prisma.room.findFirst({
-      where: {
-        id : roomId
-      }
-    })
-
-    if(!roomExist){
-      return ApiResponse(res,404,false,"No room exist with this roomId");
     }
 
     const userExist = await prisma.user.findFirst({
@@ -105,9 +96,23 @@ router.post("/generateToken", authMiddleware, async (req: Request, res: Response
     if (!userExist) {
       return ApiResponse(res, 401, false, "No user exist with this userId");
     }
+
+    const roomExist = await prisma.room.findFirst({
+      where: {
+        id : roomId
+      },
+      select:{
+        roomName : true
+      }
+    })
+
+    if(!roomExist){
+      return ApiResponse(res,404,false,"No room exist with this roomId");
+    }
+
     
     const liveKitToken = await GenerateLiveKitToken(
-      roomId,
+      roomExist.roomName,
       userExist.id,
       userExist.role
     );

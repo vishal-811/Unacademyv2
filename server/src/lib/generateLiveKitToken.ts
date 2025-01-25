@@ -7,6 +7,7 @@ export default async function GenerateLiveKitToken(
   role: RoleType
 ) {
   try {
+    console.log("the room Id is", roomName)
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,

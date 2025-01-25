@@ -95,20 +95,6 @@ export default function AdminLayout() {
         videoTrack.attach(videoRef.current!);
         audioTrack.attach(audioRef.current!);
 
-        // if(!(videoRef.current?.srcObject instanceof MediaStream)) {
-        //   return
-        // }
-
-        // const videoTracks = videoRef.current.srcObject.getVideoTracks();
-
-        // console.log("the video tracks are", videoTracks);
-
-        // await room.localParticipant.publishTrack(videoTracks[0], {
-        //   name: 'mytrack',
-        //   simulcast: true,
-        //   source: Track.Source.Camera,
-        // });
-
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);
       } catch (error) {
@@ -162,7 +148,6 @@ export default function AdminLayout() {
               <video
                 ref={videoRef}
                 autoPlay
-                playsInline
                 className="w-full h-full"
               />
               <audio ref={audioRef} autoPlay />
@@ -244,7 +229,6 @@ export default function AdminLayout() {
             <video
               ref={videoRef}
               autoPlay
-              playsInline
               className="w-full h-full"
             />
             <audio ref={audioRef} autoPlay />

@@ -8,20 +8,19 @@ import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
 import {
-  RemoteParticipant,
   RemoteTrack,
-  RemoteTrackPublication,
   Room,
   RoomEvent,
+  Track
 } from "livekit-client";
 import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
 import { useRef } from "react";
 import axios, { AxiosResponse } from "axios";
 
-export interface liveKitTokenResponse{
-  data :{
-    liveKitToken : string
-  }
+export interface liveKitTokenResponse {
+  data: {
+    liveKitToken: string;
+  };
 }
 
 export default function UserLayout() {
@@ -36,15 +35,15 @@ export default function UserLayout() {
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
-
-  let elements = null;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
 
   useEffect(() => {
     if (RoomId) {
       setRoomId(RoomId);
     }
-    
+
     const token_url = Cookies.get("token");
 
     const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
@@ -86,24 +85,36 @@ export default function UserLayout() {
     };
 
     (async () => {
-      const res : AxiosResponse<liveKitTokenResponse> = await axios.post(`http://localhost:3000/api/v1/room/generateToken`,{
-          roomId : RoomId,
-      },{
-        withCredentials : true
-      })
+      const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
+        `http://localhost:3000/api/v1/room/generateToken`,
+        {
+          roomId: RoomId,
+        },
+        {
+          withCredentials: true,
+        }
+      );
       const liveKitToken = res.data.data.liveKitToken;
       if (!liveKitToken) return;
 
       const room = await JoinLiveKitServer(liveKitToken, roomRef);
 
-      if(!room){
-        console.log("failed to connect to the room")
+      if (!room) {
+        console.log("failed to connect to the room");
         return;
       }
 
       roomRef.current = room;
+      room.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
-      console.log("the room is", room);
+      function handleTrackSubscribe(track: RemoteTrack) {
+        if(track.kind === Track.Kind.Video){
+          track.attach(videoRef.current!);
+        }
+        if(track.kind === Track.Kind.Audio){
+          track.attach(audioRef.current!);
+        }
+      }
     })();
 
     return () => {
@@ -133,7 +144,12 @@ export default function UserLayout() {
         >
           {activeScreen === "video" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-              <video ref={elements} autoPlay className="w-full h-full" />
+               <video
+                ref={videoRef}
+                autoPlay
+                className="w-full h-full"
+              />
+              <audio ref={audioRef} autoPlay/>
             </div>
           )}
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
@@ -171,7 +187,12 @@ export default function UserLayout() {
       {activeScreen !== "video" && (
         <div className="fixed top-14 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
           <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-            Video Preview
+          <video
+                ref={videoRef}
+                autoPlay
+                className="w-full h-full"
+              />
+              <audio ref={audioRef} autoPlay/>
           </div>
         </div>
       )}

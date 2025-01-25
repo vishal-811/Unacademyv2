@@ -103,7 +103,6 @@ export async function handleJoinRoom(
       );
     }
   } catch (error) {
-    //  console.log(error);
     ws.send(JSON.stringify({ msg: "Something went wrong, ws" }));
   }
 }

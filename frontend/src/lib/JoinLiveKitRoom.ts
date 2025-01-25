@@ -1,4 +1,4 @@
-import { RemoteTrack, Room, RoomEvent, VideoPresets } from "livekit-client";
+import { Room, VideoPresets } from "livekit-client";
 
 export async function JoinLiveKitServer(
   liveKitToken: string,
@@ -15,10 +15,6 @@ export async function JoinLiveKitServer(
     },
   });
   roomRef.current = room;
-  roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
-  function handleTrackSubscribe(track: RemoteTrack) {
-    console.log(track);
-  }
   try {
     await roomRef.current.prepareConnection(
       "wss://unacademy-7fpyqjfj.livekit.cloud",
