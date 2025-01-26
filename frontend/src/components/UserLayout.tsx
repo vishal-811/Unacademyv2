@@ -8,11 +8,8 @@ import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
 import { Room } from "livekit-client";
-// import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
 import { useRef } from "react";
 import useLiveKit from "../hooks/useLiveKit";
-// import axios, { AxiosResponse } from "axios";
-// import { GenerateLiveKitToken } from "../lib/GetLiveKitToken";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -31,9 +28,7 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
-  // const videoRef = useRef<HTMLVideoElement | null>(null);
-  // const audioRef = useRef<HTMLAudioElement | null>(null);
-
+  
   function handlePlay() {
     const context = new AudioContext();
     context.resume().then(() => {
@@ -41,12 +36,10 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
     });
   }
 
-  const res = useLiveKit(liveKitToken, roomRef);
-  if (!res) return;
-  const { videoRef, audioRef, room } = res;
-
+  const { videoRef, audioRef, room, connection } = useLiveKit(liveKitToken, roomRef);
+  
   useEffect(() => {
-    if (Socket) return;
+    if (Socket || !connection) return;
 
     if (RoomId) {
       setRoomId(RoomId);
@@ -92,44 +85,6 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
       }
     };
 
-    // (async () => {
-    //   const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
-    //     `http://localhost:3000/api/v1/room/generateToken`,
-    //     {
-    //       roomId: RoomId,
-    //     },
-    //     {
-    //       withCredentials: true,
-    //     }
-    //   );
-    //   const liveKitToken = res.data.data.liveKitToken;
-    //   if (!liveKitToken) return;
-
-    // const room = await JoinLiveKitServer(liveKitToken, roomRef);
-
-    //   if (!room) {
-    //     console.log("failed to connect to the room");
-    //     return;
-    //   }
-
-    //   roomRef.current = room;
-    //   console.log("the room ref is ", roomRef.current);
-    //   roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
-
-    //   function handleTrackSubscribe(track: RemoteTrack) {
-    //     console.log("track is",track)
-    //     console.log('this is running')
-    //     debugger;
-    //     if (track.kind === Track.Kind.Video) {
-    //       track.attach(videoRef.current!);
-    //     }
-    //     if (track.kind === Track.Kind.Audio) {
-    //       track.attach(audioRef.current!);
-    //     }
-    //   }
-    // })();
-    if (!roomId) return;
-
     return () => {
       socket.onclose = () => {
         socket.send(
@@ -157,7 +112,6 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
         >
           {activeScreen === "video" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground relative">
-              hello
               <video ref={videoRef} autoPlay muted className="w-full h-full" />
               <audio ref={audioRef} muted autoPlay />
             </div>

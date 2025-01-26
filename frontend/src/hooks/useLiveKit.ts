@@ -5,7 +5,7 @@ import {
   VideoPresets,
   Track,
 } from "livekit-client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function useLiveKit(
   liveKitToken: string,
@@ -13,20 +13,23 @@ export default function useLiveKit(
 ) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [connection, setConnection ] = useState<boolean>(false);
 
-  roomRef.current = null;
+  useEffect(() => {
+    console.log("the custom hook is called");
+    if (!liveKitToken) {
+      console.error("LiveKit token is missing!");
+      return;
+    }
 
-  if (!liveKitToken) return null;
-
-  const room = new Room({
-    adaptiveStream: true,
-    dynacast: true,
-    videoCaptureDefaults: {
-      resolution: VideoPresets.h720.resolution,
-    },
-  });
-
-  roomRef.current = room;
+    const room = new Room({
+      adaptiveStream: true,
+      dynacast: true,
+      videoCaptureDefaults: {
+        resolution: VideoPresets.h720.resolution,
+      },
+    });
+    roomRef.current = room;
 
   roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
@@ -36,12 +39,11 @@ export default function useLiveKit(
     if (track.kind === Track.Kind.Video) {
       track.attach(videoRef.current!);
     }
-    if (track.kind === Track.Kind.Audio) {
+    if (track.kind === Track.Kind.Audio) { 
       track.attach(audioRef.current!);
     }
   }
 
-  useEffect(() => {
     (async () => {
       try {
         await roomRef.current?.prepareConnection(
@@ -55,6 +57,8 @@ export default function useLiveKit(
             autoSubscribe: true,
           }
         );
+        setConnection(true);
+        console.log("connected to the livekit server");
       } catch (error) {
         console.log(`error while connecting to live kit server ${error}`);
         return null;
@@ -62,5 +66,9 @@ export default function useLiveKit(
     })();
   }, []);
 
-  return { videoRef, audioRef, room: roomRef.current };
+  return { videoRef, audioRef, room: roomRef.current, connection };
 }
+
+
+
+

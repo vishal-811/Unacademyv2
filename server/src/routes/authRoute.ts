@@ -60,6 +60,7 @@ router.post("/signup", async (req: Request, res: Response) => {
     res.cookie("token", token);
     return ApiSuccessResponse(res, 201, true, "User Signup Sucessfully", { role : role });
   } catch (error) {
+    console.log("error", error);
     return ApiResponse(res, 500, false, "Internal Server Error");
   }
 });

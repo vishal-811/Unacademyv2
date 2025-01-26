@@ -21,9 +21,9 @@ import {
   Room,
   VideoPresets,
 } from "livekit-client";
-import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
 import { useLiveKitToken } from "../strore/useLiveKitToken";
 import { useRef } from "react";
+import useLiveKit from "../hooks/useLiveKit";
 
 export default function AdminLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
@@ -40,13 +40,13 @@ export default function AdminLayout() {
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  if(!liveKitToken)return;
+  const { videoRef, audioRef, room, connection} = useLiveKit(liveKitToken, roomRef);
 
   useEffect(() => {
-    if (Socket) return;
+    if (Socket || !connection || !RoomId) return;
 
-    if (!RoomId) return;
     setRoomId(RoomId);
 
     const token_url = Cookies.get("token");
@@ -74,7 +74,6 @@ export default function AdminLayout() {
       if (!liveKitToken) return;
 
       try {
-        const room = await JoinLiveKitServer(liveKitToken, roomRef);
         roomRef.current = room;
 
         console.log("the admin room ref is", roomRef.current);
@@ -122,7 +121,7 @@ export default function AdminLayout() {
         roomRef.current = null;
       }
     };
-  }, [RoomId, liveKitToken]);
+  }, [RoomId, liveKitToken, connection]);
 
   const handleSendEvent = (type: string) => {
     if (!Socket) return;
