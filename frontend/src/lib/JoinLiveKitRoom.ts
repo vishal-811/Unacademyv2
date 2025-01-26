@@ -1,12 +1,13 @@
-import { Room, VideoPresets } from "livekit-client";
+import { RemoteTrack, Room, RoomEvent, VideoPresets } from "livekit-client";
 
 export async function JoinLiveKitServer(
   liveKitToken: string,
   roomRef: React.MutableRefObject<Room | null>
 ): Promise<Room | null> {
-
   roomRef.current = null;
+
   if (!liveKitToken) return null;
+
   const room = new Room({
     adaptiveStream: true,
     dynacast: true,
@@ -15,6 +16,19 @@ export async function JoinLiveKitServer(
     },
   });
   roomRef.current = room;
+
+  roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
+
+  function handleTrackSubscribe(track: RemoteTrack) {
+    console.log("track is", track);
+    // if (track.kind === Track.Kind.Video) {
+    //   track.attach(videoRef.current!);
+    // }
+    // if (track.kind === Track.Kind.Audio) {
+    //   track.attach(audioRef.current!);
+    // }
+  }
+
   try {
     await roomRef.current.prepareConnection(
       "wss://unacademy-7fpyqjfj.livekit.cloud",
@@ -22,7 +36,10 @@ export async function JoinLiveKitServer(
     );
     await roomRef.current.connect(
       "wss://unacademy-7fpyqjfj.livekit.cloud",
-      liveKitToken
+      liveKitToken,
+      {
+        autoSubscribe: true,
+      }
     );
     return roomRef.current;
   } catch (error) {

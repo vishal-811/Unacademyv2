@@ -27,27 +27,31 @@ export default function CreateRoom() {
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsCreating(true);
-    const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
-      "http://localhost:3000/api/v1/room/createRoom",
-      {
-        roomname: roomName,
-        description: description,
-      },
-      {
-        withCredentials: true,
+    try {
+      setIsCreating(true);
+      const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
+        "http://localhost:3000/api/v1/room/createRoom",
+        {
+          roomname: roomName,
+          description: description,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+      if (res.status === 201) {
+        const roomId = res.data.data.roomId;
+        const liveKitToken = res.data.data.liveKitToken;
+        setRoomLink(`${roomId}`);
+        setRoomId(roomId);
+        setLiveKitToken(liveKitToken);
+        setExcaliRoomId(roomId);
       }
-    );
-    if (res.status === 201) {
-      const roomId = res.data.data.roomId;
-      const liveKitToken = res.data.data.liveKitToken;
-      console.log("the live kit toekn is ", liveKitToken);
-      setRoomLink(`${roomId}`);
-      setRoomId(roomId);
-      setLiveKitToken(liveKitToken);
-      setExcaliRoomId(roomId);
+    } catch (error) {
+      console.log("error in creating the room");
+    } finally {
+      setIsCreating(false);
     }
-    setIsCreating(false);
   };
 
   const copyLink = () => {

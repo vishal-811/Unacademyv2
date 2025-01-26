@@ -28,6 +28,7 @@ export async function handleJoinRoom(
   userToken: UserTokenData
 ) {
   try {
+    console.log("user join the room");
     const { id, role } = userToken;
     const userExist = await prisma.user.findFirst({
       where: {

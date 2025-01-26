@@ -18,7 +18,7 @@ export default async function GenerateLiveKitToken(
     );
     if (RoleType.instructor === role) {
       console.log("admin route hitted");
-      at.addGrant({ roomJoin: true, room: roomName, canPublish: true });
+      at.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, roomAdmin: true });
     } else if (RoleType.student === role) {
       console.log("user route hitted");
       at.addGrant({ roomJoin: true, room: roomName, canPublish: false, canSubscribe : true });

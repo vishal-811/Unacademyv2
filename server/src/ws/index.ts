@@ -11,7 +11,6 @@ export function handleWebsocketMessageEvent(
   ws: WebSocket,
   userToken: UserTokenData
 ) {
-  console.log("hit the handle websocket message function")
   const parsedData = JSON.parse(message.toString());
   const { type, data } = parsedData;
   const { id, role } = userToken;

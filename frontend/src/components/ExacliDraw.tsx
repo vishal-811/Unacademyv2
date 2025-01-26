@@ -5,32 +5,34 @@ import { useExcaliData } from "../strore/useExcaliData";
 import { useEffect, useState } from "react";
 import {
   AppState,
-  ExcalidrawImperativeAPI
+  ExcalidrawImperativeAPI,
 } from "@excalidraw/excalidraw/types/types";
 import { ExcalidrawElement } from "@excalidraw/excalidraw/types/element/types";
 import { useExcaliRoomId } from "../strore/useExcaliRoomId";
 
-
 export function ExcalidrawComponent() {
   const excalidrawData = useExcaliData((state) => state.excalidrawData);
-  const socket = useSocket((state) => state.socket);
+  const Socket = useSocket((state) => state.socket);
   const roleStore = useRole();
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI>();
-  
+
   const ExcaliRoomId = useExcaliRoomId((state) => state.ExcaliRoomId);
 
-  console.log("the excaliroomid", ExcaliRoomId);
+    
   const handleChange = (
     elements: readonly ExcalidrawElement[],
-    appState: AppState,
+    appState: AppState
   ) => {
+     console.log("change called...");
+
     if (roleStore.role === RoleType.student) return;
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
+
+    if (Socket && Socket.readyState === WebSocket.OPEN) {
+      Socket.send(
         JSON.stringify({
           type: "excali_draw_event",
           data: {
-            roomId: ExcaliRoomId ,
+            roomId: ExcaliRoomId,
             excaliEvent: { elements: elements, appState: appState },
           },
         })

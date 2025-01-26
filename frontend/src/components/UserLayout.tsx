@@ -7,39 +7,47 @@ import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
-import {
-  RemoteTrack,
-  Room,
-  RoomEvent,
-  Track
-} from "livekit-client";
-import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
+import { Room } from "livekit-client";
+// import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
 import { useRef } from "react";
-import axios, { AxiosResponse } from "axios";
+import useLiveKit from "../hooks/useLiveKit";
+// import axios, { AxiosResponse } from "axios";
+// import { GenerateLiveKitToken } from "../lib/GetLiveKitToken";
 
-export interface liveKitTokenResponse {
-  data: {
-    liveKitToken: string;
-  };
+interface userLayoutProps {
+  liveKitToken: string;
 }
 
-export default function UserLayout() {
+export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<"excalidraw" | "video">(
     "video"
   );
   const [roomId, setRoomId] = useState<string | null>(null);
+  const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
 
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // const videoRef = useRef<HTMLVideoElement | null>(null);
+  // const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  function handlePlay() {
+    const context = new AudioContext();
+    context.resume().then(() => {
+      console.log("Video is ready to serve");
+    });
+  }
+
+  const res = useLiveKit(liveKitToken, roomRef);
+  if (!res) return;
+  const { videoRef, audioRef, room } = res;
 
   useEffect(() => {
+    if (Socket) return;
+
     if (RoomId) {
       setRoomId(RoomId);
     }
@@ -84,38 +92,43 @@ export default function UserLayout() {
       }
     };
 
-    (async () => {
-      const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
-        `http://localhost:3000/api/v1/room/generateToken`,
-        {
-          roomId: RoomId,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-      const liveKitToken = res.data.data.liveKitToken;
-      if (!liveKitToken) return;
+    // (async () => {
+    //   const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
+    //     `http://localhost:3000/api/v1/room/generateToken`,
+    //     {
+    //       roomId: RoomId,
+    //     },
+    //     {
+    //       withCredentials: true,
+    //     }
+    //   );
+    //   const liveKitToken = res.data.data.liveKitToken;
+    //   if (!liveKitToken) return;
 
-      const room = await JoinLiveKitServer(liveKitToken, roomRef);
+    // const room = await JoinLiveKitServer(liveKitToken, roomRef);
 
-      if (!room) {
-        console.log("failed to connect to the room");
-        return;
-      }
+    //   if (!room) {
+    //     console.log("failed to connect to the room");
+    //     return;
+    //   }
 
-      roomRef.current = room;
-      room.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
+    //   roomRef.current = room;
+    //   console.log("the room ref is ", roomRef.current);
+    //   roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
-      function handleTrackSubscribe(track: RemoteTrack) {
-        if(track.kind === Track.Kind.Video){
-          track.attach(videoRef.current!);
-        }
-        if(track.kind === Track.Kind.Audio){
-          track.attach(audioRef.current!);
-        }
-      }
-    })();
+    //   function handleTrackSubscribe(track: RemoteTrack) {
+    //     console.log("track is",track)
+    //     console.log('this is running')
+    //     debugger;
+    //     if (track.kind === Track.Kind.Video) {
+    //       track.attach(videoRef.current!);
+    //     }
+    //     if (track.kind === Track.Kind.Audio) {
+    //       track.attach(audioRef.current!);
+    //     }
+    //   }
+    // })();
+    if (!roomId) return;
 
     return () => {
       socket.onclose = () => {
@@ -133,23 +146,20 @@ export default function UserLayout() {
   }, [RoomId]);
 
   return (
-    <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4">
+    <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4 relative">
       <div className="flex flex-col sm:flex-row h-[calc(100%-4rem)] space-y-4 sm:space-y-0 sm:space-x-4">
         {/* Main screen */}
         <motion.div
           layout
-          className={`border border-primary rounded-lg overflow-hidden ${
+          className={`border border-primary rounded-lg overflow-hidden relative ${
             hidepanel ? "w-full sm:w-[80%]" : "w-full"
           }`}
         >
           {activeScreen === "video" && (
-            <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-               <video
-                ref={videoRef}
-                autoPlay
-                className="w-full h-full"
-              />
-              <audio ref={audioRef} autoPlay/>
+            <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground relative">
+              hello
+              <video ref={videoRef} autoPlay muted className="w-full h-full" />
+              <audio ref={audioRef} muted autoPlay />
             </div>
           )}
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
@@ -185,17 +195,15 @@ export default function UserLayout() {
 
       {/* Small screen video overlay */}
       {activeScreen !== "video" && (
-        <div className="fixed top-14 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
+        <div className="top-14 right-2 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg relative">
           <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-          <video
-                ref={videoRef}
-                autoPlay
-                className="w-full h-full"
-              />
-              <audio ref={audioRef} autoPlay/>
+            <video ref={videoRef} autoPlay muted className="w-full h-full" />
+            {/* <audio ref={audioRef}  autoPlay /> */}
           </div>
         </div>
       )}
+
+      <button onClick={handlePlay}>Click for audio</button>
     </div>
   );
 }

@@ -15,12 +15,10 @@ import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
-// import { MediaController } from "./MediaController";
 import {
   createLocalAudioTrack,
   createLocalVideoTrack,
   Room,
-  Track,
   VideoPresets,
 } from "livekit-client";
 import { JoinLiveKitServer } from "../lib/JoinLiveKitRoom";
@@ -34,7 +32,7 @@ export default function AdminLayout() {
   >("video");
 
   const [roomId, setRoomId] = useState<string | null>(null);
-  const socket = useSocket((state) => state.socket);
+  const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const liveKitToken = useLiveKitToken((state) => state.liveKitToken);
@@ -46,9 +44,10 @@ export default function AdminLayout() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    if (Socket) return;
+
     if (!RoomId) return;
     setRoomId(RoomId);
-
 
     const token_url = Cookies.get("token");
 
@@ -76,22 +75,23 @@ export default function AdminLayout() {
 
       try {
         const room = await JoinLiveKitServer(liveKitToken, roomRef);
-        console.log("The room of livekit is",room);
         roomRef.current = room;
 
-        if (!room) {
-          return;
-        }
+        console.log("the admin room ref is", roomRef.current);
+        if (!room) return;
 
         await room.localParticipant.setCameraEnabled(true);
         await room.localParticipant.setMicrophoneEnabled(true);
 
-        const videoTrack = await createLocalVideoTrack({ facingMode: "user",  resolution: VideoPresets.h720 });
+        const videoTrack = await createLocalVideoTrack({
+          facingMode: "user",
+          resolution: VideoPresets.h720,
+        });
         const audioTrack = await createLocalAudioTrack({
           echoCancellation: true,
           noiseSuppression: true,
         });
-       
+
         videoTrack.attach(videoRef.current!);
         audioTrack.attach(audioRef.current!);
 
@@ -103,7 +103,17 @@ export default function AdminLayout() {
     })();
 
     return () => {
-      socket.close();
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(
+          JSON.stringify({
+            type: "leave_room",
+            data: {
+              roomId: roomId,
+            },
+          })
+        );
+        socket.close();
+      }
 
       if (roomRef.current) {
         roomRef.current.localParticipant.setCameraEnabled(false);
@@ -115,8 +125,8 @@ export default function AdminLayout() {
   }, [RoomId, liveKitToken]);
 
   const handleSendEvent = (type: string) => {
-    if (!socket) return;
-    socket?.send(
+    if (!Socket) return;
+    Socket?.send(
       JSON.stringify({
         type: "switch_event",
         data: {
@@ -145,12 +155,8 @@ export default function AdminLayout() {
           )}
           {activeScreen === "video" && (
             <div className="w-full h-full">
-              <video
-                ref={videoRef}
-                autoPlay
-                className="w-full h-full"
-              />
-              <audio ref={audioRef} autoPlay />
+              <video ref={videoRef} autoPlay className="w-full h-full" />
+              {/* <audio ref={audioRef} autoPlay /> */}
             </div>
           )}
         </motion.div>
@@ -226,12 +232,8 @@ export default function AdminLayout() {
       {activeScreen !== "video" && (
         <div className="fixed top-14 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
           <div className="w-full h-full">
-            <video
-              ref={videoRef}
-              autoPlay
-              className="w-full h-full"
-            />
-            <audio ref={audioRef} autoPlay />
+            <video ref={videoRef} autoPlay className="w-full h-full" />
+            {/* <audio ref={audioRef} autoPlay /> */}
           </div>
         </div>
       )}
