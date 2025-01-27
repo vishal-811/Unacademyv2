@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ExcalidrawComponent } from "../components/ExacliDraw";
 import { CustomButton } from "../components/Button";
-import { Maximize2 } from "lucide-react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
@@ -12,6 +12,7 @@ import { useRef } from "react";
 import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { useRoomJoin } from "../strore/useRoomJoin";
+import { ChatComponent } from "./Chat";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -126,61 +127,45 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
             hidepanel ? "w-full sm:w-[80%]" : "w-full"
           }`}
         >
-          {activeScreen === "video" && (
-            <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground relative">
-              <video
-                ref={videoRef}
-                autoPlay
-                muted
-                className="w-full h-full object-cover"
-              />
-              <audio ref={audioRef} muted autoPlay />
-            </div>
-          )}
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
-        </motion.div>
 
-        {/* Chat panel */}
-        <AnimatePresence>
-          {!hidepanel && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "20%", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-2 border-primary rounded-lg relative h-full min-w-[250px]"
-            >
-              <div className="p-4 h-full overflow-y-auto">
-                {/* Chat content goes here */}
-                <h2 className="text-lg font-semibold mb-4">Chat</h2>
-                {/*  chat component */}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <CustomButton
-        variant="outline"
-        size="icon"
-        className="absolute bottom-5 right-8"
-        onClick={() => setIsHidePanel(!hidepanel)}
-      >
-        <Maximize2 className="h-4 w-4 bg-red-400" />
-      </CustomButton>
-
-      {/* Small screen video overlay */}
-      {activeScreen !== "video" && (
-        <div className="fixed top-18 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
-          <div className="w-full h-full">
+          {/* Video */}
+          <div
+            className={`${
+              activeScreen === "video"
+                ? "absolute w-full h-full"
+                : "absolute top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50"
+            }`}
+          >
             <video
               ref={videoRef}
               autoPlay
+              playsInline
               className="w-full h-full object-cover"
             />
             <audio ref={audioRef} autoPlay />
           </div>
-        </div>
+        </motion.div>
+
+        {/* Chat */}
+        {!hidepanel && <ChatComponent />}
+      </div>
+       
+       <div className="absolute bottom-4 right-4">
+       {hidepanel ? (
+        <CustomButton onClick={() => setIsHidePanel(false)} variant="outline">
+          <Maximize2 className="max-h-4  max-w-w-4" /> Show Chat
+        </CustomButton>
+      ) : (
+        <CustomButton onClick={() => setIsHidePanel(true)} variant="outline">
+          <Minimize2
+            className=" 
+            max-h-4 max-w-4"
+          />{" "}
+          Hide Chat
+        </CustomButton>
       )}
+       </div>
     </div>
   );
 }

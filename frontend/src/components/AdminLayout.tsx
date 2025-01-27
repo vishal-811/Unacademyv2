@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ExcalidrawComponent } from "../components/ExacliDraw";
 import { CustomButton } from "../components/Button";
 import {
@@ -24,6 +24,7 @@ import {
 import { useRef } from "react";
 import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
+import { ChatComponent } from "./Chat";
 
 export default function AdminLayout() {
   const [hidepanel, setIsHidePanel] = useState(false);
@@ -36,26 +37,26 @@ export default function AdminLayout() {
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const liveKitToken = localStorage.getItem("liveKitToken");
-  const { RoomId } = useParams<string>();
+  const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
   const socket = useRef<WebSocket | null>(null);
-  
-  if (!liveKitToken) return;
-  const { videoRef, audioRef, room, connection } = useLiveKit(
-    liveKitToken,
-    roomRef
-  );
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  if (!liveKitToken) return null;
+
+  const { room, connection } = useLiveKit(liveKitToken, roomRef);
 
   useEffect(() => {
     if (Socket || !connection || !RoomId) return;
 
     setRoomId(RoomId);
-    console.log("the useEffect of admin is called");
     const token_url = Cookies.get("token");
 
     let ws = socket.current;
     ws = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+
     ws.onopen = () => {
       ws.send(
         JSON.stringify({
@@ -71,6 +72,10 @@ export default function AdminLayout() {
 
     ws.onmessage = (message: any) => {
       const { msg } = JSON.parse(message.data);
+      if(msg.eventType === 'chat_event'){
+        console.log("the message is",msg.message)
+        console.log("the sender is", msg.messageSender)
+      }
       if (msg === "u joined the meeting sucessfully") {
         toast.success("You Joined the meeting!");
       }
@@ -79,11 +84,9 @@ export default function AdminLayout() {
     };
 
     (async () => {
-      if (!liveKitToken) return;
+      if (!liveKitToken || !room) return;
 
       try {
-        if (!room) return; //means the livekit room is not created.
-
         await room.localParticipant.setCameraEnabled(true);
         await room.localParticipant.setMicrophoneEnabled(true);
 
@@ -96,8 +99,12 @@ export default function AdminLayout() {
           noiseSuppression: true,
         });
 
-        videoTrack.attach(videoRef.current!);
-        audioTrack.attach(audioRef.current!);
+        if (videoRef.current) {
+          videoTrack.attach(videoRef.current);
+        }
+        if (audioRef.current) {
+          audioTrack.attach(audioRef.current);
+        }
 
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);
@@ -105,8 +112,7 @@ export default function AdminLayout() {
         console.error("An error occurred during LiveKit setup:", error);
       }
     })();
-    
-    console.log("the video ref is", videoRef)
+
     return () => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(
@@ -148,8 +154,8 @@ export default function AdminLayout() {
         {/* Main screen */}
         <motion.div
           layout={false}
-          className={`border border-primary rounded-lg overflow-hidden ${
-            hidepanel ? "w-full sm:w-[80%]" : "w-full"
+          className={`border border-primary rounded-lg overflow-hidden relative ${
+            hidepanel ? "w-[80%]" : "w-full"
           }`}
         >
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
@@ -158,48 +164,30 @@ export default function AdminLayout() {
               Screen Share
             </div>
           )}
-          {activeScreen === "video" && (
-            <div className="w-full h-full">
-              <video
-                ref={videoRef}
-                autoPlay
-                className="w-full h-full object-cover"
-              />
-              <audio ref={audioRef} autoPlay />
-            </div>
-          )}
+          {/* Video */}
+          <div
+            className={`${
+              activeScreen === "video"
+                ? "absolute w-full h-full"
+                : "absolute top-16 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50 bg-opacity-100 object-cover"
+            }`}
+          >
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            <audio ref={audioRef} autoPlay />
+          </div>
         </motion.div>
 
         {/* Chat panel */}
-        <AnimatePresence>
-          {!hidepanel && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "20%", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="border-2 border-primary rounded-lg relative h-full min-w-[250px]"
-            >
-              <div className="p-4 h-full overflow-y-auto">
-                {/* Chat content goes here */}
-                <h2 className="text-lg font-semibold mb-4">Chat</h2>
-                {/*  chat component */}
-              </div>
-              <CustomButton
-                variant="outline"
-                size="icon"
-                className="absolute bottom-4 right-4"
-                onClick={() => setIsHidePanel(!hidepanel)}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </CustomButton>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!hidepanel && <ChatComponent />}
       </div>
 
       {/* Control panel */}
-      <div className="flex flex-wrap justify-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 mx-auto">
         <CustomButton
           onClick={() => setActiveScreen("screenshare")}
           variant="outline"
@@ -230,26 +218,20 @@ export default function AdminLayout() {
         >
           <Edit3 className="mr-2 h-4 w-4" /> Whiteboard
         </CustomButton>
-        {hidepanel && (
+        {hidepanel ? (
           <CustomButton onClick={() => setIsHidePanel(false)} variant="outline">
-            <Minimize2 className="mr-2 h-4 w-4" /> Show Chat
+            <Maximize2 className="mr-2 h-4 w-4" /> Show Chat
+          </CustomButton>
+        ) : (
+          <CustomButton onClick={() => setIsHidePanel(true)} variant="outline">
+            <Minimize2
+              className="mr-2 
+            h-4 w-4"
+            />{" "}
+            Hide Chat
           </CustomButton>
         )}
       </div>
-
-      {/* Small screen video overlay */}
-      {activeScreen !== "video" && (
-        <div className="fixed top-18 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
-          <div className="w-full h-full">
-            <video
-              ref={videoRef}
-              autoPlay
-              className="w-full h-full object-cover"
-            />
-            <audio ref={audioRef} autoPlay />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

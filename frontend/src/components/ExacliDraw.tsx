@@ -48,7 +48,7 @@ export function ExcalidrawComponent() {
   }, [excalidrawData]);
 
   return (
-    <div className="w-full h-full object-cover">
+    <div className="w-full h-full object-cover z-10">
       {roleStore.role === RoleType.instructor ? (
         <Excalidraw
           initialData={{

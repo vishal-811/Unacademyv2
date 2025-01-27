@@ -1,5 +1,6 @@
 import { roomsInfo } from "../room/RoomManager";
 import WebSocket from "ws";
+import { ChatResponse } from "../types";
 
 export function BroadCastMessage(
     roomId: string,
@@ -20,3 +21,16 @@ export function BroadCastMessage(
     });
   }
   
+
+  export function BroadCastMessageInRoom(roomId:string, ws: WebSocket,message : ChatResponse){
+    const room = roomsInfo.get(roomId);
+    if(!room){
+      ws.send(JSON.stringify({msg : 'No room exist with this roomId'}));
+      return;
+    }
+
+    room.users.map((user) => {
+      console.log("the response data is", message)
+      user.send(JSON.stringify({msg : message}))
+    })
+  }
