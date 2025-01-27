@@ -23,7 +23,6 @@ export function ExcalidrawComponent() {
     elements: readonly ExcalidrawElement[],
     appState: AppState
   ) => {
-     console.log("change called...");
 
     if (roleStore.role === RoleType.student) return;
 
@@ -49,7 +48,7 @@ export function ExcalidrawComponent() {
   }, [excalidrawData]);
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full object-cover">
       {roleStore.role === RoleType.instructor ? (
         <Excalidraw
           initialData={{

@@ -27,12 +27,17 @@ export async function handleJoinRoom(
   ws: WebSocket,
   userToken: UserTokenData
 ) {
+
+  console.log("the data send by the user is",data);
   try {
     console.log("user join the room");
-    const { id, role } = userToken;
+    const { userId, role } = userToken;
+    console.log("the user userId is", userId);
+    console.log("the user role is", role);
+    if(!userId) ws.send(JSON.stringify({msg :"Please provuserIde the user userId"}));
     const userExist = await prisma.user.findFirst({
       where: {
-        id: id,
+        id: userId,
       },
     });
 
@@ -42,6 +47,7 @@ export async function handleJoinRoom(
     }
 
     const { roomId } = data;
+    console.log("the room id which the user wanna to join is", roomId);
     if (!roomId) {
       ws.send(JSON.stringify({ msg: "Please provide a room id" }));
       return;

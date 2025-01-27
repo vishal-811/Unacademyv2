@@ -6,10 +6,12 @@ import { Maximize2 } from "lucide-react";
 import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Room } from "livekit-client";
 import { useRef } from "react";
 import useLiveKit from "../hooks/useLiveKit";
+import { toast } from "sonner";
+import { useRoomJoin } from "../strore/useRoomJoin";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -24,47 +26,60 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
-
+  const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
-  
-  function handlePlay() {
-    const context = new AudioContext();
-    context.resume().then(() => {
-      console.log("Video is ready to serve");
-    });
-  }
+  const socket = useRef<WebSocket | null>(null);
 
-  const { videoRef, audioRef, room, connection } = useLiveKit(liveKitToken, roomRef);
-  
+  const navigate = useNavigate();
+
+  const { videoRef, audioRef, room, connection } = useLiveKit(
+    liveKitToken,
+    roomRef
+  );
+
+  roomRef.current = room;
   useEffect(() => {
     if (Socket || !connection) return;
 
+    console.log("the connection to the ws");
     if (RoomId) {
       setRoomId(RoomId);
     }
 
     const token_url = Cookies.get("token");
 
-    const socket = new WebSocket(`ws://localhost:3000?token=${token_url}`);
-
-    socket.onopen = () => {
-      socket.send(
+    let ws = socket.current;
+    ws = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+    ws.onopen = () => {
+      ws.send(
         JSON.stringify({
           type: "join_room",
           data: {
-            roomId: roomId,
+            roomId: RoomId,
           },
         })
       );
     };
 
-    setSocket(socket);
+    setSocket(ws);
 
-    socket.onmessage = (message: any) => {
+    ws.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
       const { msg, state } = parsedMessage;
+      if (
+        msg === "wait for the admin to join the meeting" ||
+        msg === "Admin join the meeting" ||
+        msg === "You joined the meeting"
+      ) {
+        toast.info(msg);
+      }
+      if (msg === "Admin leave the meeting") {
+        toast.warning(msg);
+        setIsRoomJoined(false);
+        navigate("/");
+      }
       if (!msg) return;
       let { data } = msg;
 
@@ -86,8 +101,8 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
     };
 
     return () => {
-      socket.onclose = () => {
-        socket.send(
+      ws.onclose = () => {
+        ws.send(
           JSON.stringify({
             type: "leave_room",
             data: {
@@ -96,12 +111,13 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
           })
         );
       };
+      setSocket(null);
       roomRef?.current?.disconnect();
     };
-  }, [RoomId]);
+  }, [RoomId, liveKitToken, connection]);
 
   return (
-    <div className="w-full h-[calc(100vh-4rem)] border-2 border-solid border-zinc-100 p-2 flex flex-col space-y-4 relative">
+    <div className="w-full h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-900 to-gray-800 p-4 flex flex-col space-y-4 relative">
       <div className="flex flex-col sm:flex-row h-[calc(100%-4rem)] space-y-4 sm:space-y-0 sm:space-x-4">
         {/* Main screen */}
         <motion.div
@@ -112,7 +128,12 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
         >
           {activeScreen === "video" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground relative">
-              <video ref={videoRef} autoPlay muted className="w-full h-full" />
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                className="w-full h-full object-cover"
+              />
               <audio ref={audioRef} muted autoPlay />
             </div>
           )}
@@ -134,30 +155,32 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
                 <h2 className="text-lg font-semibold mb-4">Chat</h2>
                 {/*  chat component */}
               </div>
-              <CustomButton
-                variant="outline"
-                size="icon"
-                className="absolute bottom-4 right-4"
-                onClick={() => setIsHidePanel(!hidepanel)}
-              >
-                <Maximize2 className="h-4 w-4" />
-              </CustomButton>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+      <CustomButton
+        variant="outline"
+        size="icon"
+        className="absolute bottom-5 right-8"
+        onClick={() => setIsHidePanel(!hidepanel)}
+      >
+        <Maximize2 className="h-4 w-4 bg-red-400" />
+      </CustomButton>
 
       {/* Small screen video overlay */}
       {activeScreen !== "video" && (
-        <div className="top-14 right-2 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg relative">
-          <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-            <video ref={videoRef} autoPlay muted className="w-full h-full" />
-            {/* <audio ref={audioRef}  autoPlay /> */}
+        <div className="fixed top-18 right-2  min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg">
+          <div className="w-full h-full">
+            <video
+              ref={videoRef}
+              autoPlay
+              className="w-full h-full object-cover"
+            />
+            <audio ref={audioRef} autoPlay />
           </div>
         </div>
       )}
-
-      <button onClick={handlePlay}>Click for audio</button>
     </div>
   );
 }

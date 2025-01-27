@@ -1,16 +1,19 @@
-// import Cookies from "js-cookie";
-// import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "../../strore/useAuth";
 
-// const AppInitializer = () => {
-//   const userToken = Cookies.get("token");
-//   const [isLoggedin, setIsLoggedin] = useState(false);
-   
-//   useEffect(() => {
-//     if (userToken) {
-//       setIsLoggedin(true);
-//     }
-//   }, [isLoggedin]);
-//   return null;
-// };
+const AppInitializer = () => {
+  const login = useAuth((state) => state.login);
+  const isLoggedin = useAuth((state) => state.isLoggedIn);
 
-// export default AppInitializer;
+  useEffect(() => {
+    login();
+
+    if (!isLoggedin) {
+      localStorage.clear();
+    }
+  }, [login, isLoggedin]);
+
+  return null;
+};
+
+export default AppInitializer;

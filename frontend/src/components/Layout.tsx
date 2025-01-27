@@ -16,7 +16,6 @@ export default function Layout({ roomId }: LayoutProps) {
     if (role === RoleType.student) {
       (async () => {
         const token = await GenerateLiveKitToken(roomId);
-        console.log("the live kit token is ", token);
         if (!token) return;
         setLiveKitToken(token);
       })();

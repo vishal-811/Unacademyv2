@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Book, Users, Calendar, User, Menu, X } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useRole } from "../strore/useRole";
 import { useAuth } from "../strore/useAuth";
 import { useIsJoinRoomClicked, useRoomJoin } from "../strore/useRoomJoin";
-import { useSocket } from "../strore/useSocket";
 
 const navItems = [
   { name: "Courses", href: "/courses", icon: Book },
@@ -22,9 +21,6 @@ const Navbar = () => {
     (state) => state.setIsJoinRoomClicked
   );
   const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
-  const socket = useSocket((state) => state.socket);
-  const setSocket = useSocket((state) => state.setSocket);
-  const { RoomId } = useParams();
   const navigate = useNavigate();
 
   const renderButton = () => {
@@ -44,18 +40,8 @@ const Navbar = () => {
       return isRoomJoined ? (
         <button
           onClick={() => {
-            socket?.send(
-              JSON.stringify({
-                type: "leave_room",
-                data: {
-                  roomId: RoomId,
-                },
-              })
-            );
-            socket?.close();
-            setSocket(null);
             setIsRoomJoined(false);
-            navigate("/")
+            navigate("/");
           }}
           className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300"
         >
@@ -71,20 +57,25 @@ const Navbar = () => {
       );
     }
 
-    return (
+    return isRoomJoined ? (
       <button
-        onClick={() => navigate("/createroom")}
-        className={`flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
-          isRoomJoined
-            ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
-            : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500"
-        } transition-colors duration-300`}
+        onClick={() => {
+          setIsRoomJoined(false);
+          navigate("/");
+        }}
+        className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300"
       >
-        {isRoomJoined ? "Leave Room" : "Create Room"}
+        Leave Room
+      </button>
+    ) : (
+      <button
+        onClick={() => navigate("/createRoom")}
+        className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-300"
+      >
+        Create Room
       </button>
     );
   };
-
   return (
     <nav className="bg-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

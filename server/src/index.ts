@@ -44,6 +44,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     console.error(error);
   });
   ws.on("message", (message: any) => {
+    console.log("Websocket server is hitted");
     handleWebsocketMessageEvent(message, ws, userToken);
   });
   ws.on("close", () => {
@@ -57,8 +58,6 @@ app.use(passport.session());
 
 app.use("/api/v1", rootRouter);
 app.get("/", (req, res) => {
-  console.log(req.cookies);
-  console.log(req);
   res.send("hehe");
 });
 

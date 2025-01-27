@@ -5,6 +5,7 @@ import axios, { AxiosResponse } from "axios";
 import { useNavigate } from "react-router-dom";
 import { useExcaliRoomId } from "../strore/useExcaliRoomId";
 import { useLiveKitToken } from "../strore/useLiveKitToken";
+import { toast } from "sonner"
 
 interface liveKitTokenResponse {
   data: {
@@ -44,7 +45,7 @@ export default function CreateRoom() {
         const liveKitToken = res.data.data.liveKitToken;
         setRoomLink(`${roomId}`);
         setRoomId(roomId);
-        setLiveKitToken(liveKitToken);
+        localStorage.setItem("liveKitToken", liveKitToken);
         setExcaliRoomId(roomId);
       }
     } catch (error) {
@@ -56,7 +57,7 @@ export default function CreateRoom() {
 
   const copyLink = () => {
     navigator.clipboard.writeText(`${roomLink}`);
-    alert("Room link copied to clipboard!");
+    toast.success("Link copied sucessfully");
   };
 
   const shareLink = () => {

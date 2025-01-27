@@ -13,7 +13,7 @@ export default function useLiveKit(
 ) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [connection, setConnection ] = useState<boolean>(false);
+  const [connection, setConnection] = useState<boolean>(false);
 
   useEffect(() => {
     console.log("the custom hook is called");
@@ -31,18 +31,18 @@ export default function useLiveKit(
     });
     roomRef.current = room;
 
-  roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
+    roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
-  function handleTrackSubscribe(track: RemoteTrack) {
-    console.log("track is", track);
+    function handleTrackSubscribe(track: RemoteTrack) {
+      console.log("track is", track);
 
-    if (track.kind === Track.Kind.Video) {
-      track.attach(videoRef.current!);
+      if (track.kind === Track.Kind.Video) {
+        track.attach(videoRef.current!);
+      }
+      if (track.kind === Track.Kind.Audio) {
+        track.attach(audioRef.current!);
+      }
     }
-    if (track.kind === Track.Kind.Audio) { 
-      track.attach(audioRef.current!);
-    }
-  }
 
     (async () => {
       try {
@@ -64,11 +64,7 @@ export default function useLiveKit(
         return null;
       }
     })();
-  }, []);
+  }, [liveKitToken]);
 
   return { videoRef, audioRef, room: roomRef.current, connection };
 }
-
-
-
-

@@ -5,7 +5,7 @@ export interface RoomEventData {
 }
 
 export interface UserTokenData {
-  id: string; //user ID
+  userId: string; //user ID
   role: RoleType;
 }
 
