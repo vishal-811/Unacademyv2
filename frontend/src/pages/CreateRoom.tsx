@@ -4,7 +4,7 @@ import { FiCopy, FiShare2 } from "react-icons/fi";
 import axios, { AxiosResponse } from "axios";
 import { useNavigate } from "react-router-dom";
 import { useExcaliRoomId } from "../strore/useExcaliRoomId";
-import { useLiveKitToken } from "../strore/useLiveKitToken";
+// import { useLiveKitToken } from "../strore/useLiveKitToken";
 import { toast } from "sonner"
 
 interface liveKitTokenResponse {
@@ -24,7 +24,7 @@ export default function CreateRoom() {
   const navigate = useNavigate();
 
   const setExcaliRoomId = useExcaliRoomId((state) => state.setExcaliRoomId);
-  const setLiveKitToken = useLiveKitToken((state) => state.setLiveKitToken);
+  // const setLiveKitToken = useLiveKitToken((state) => state.setLiveKitToken);
 
   const handleCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault();

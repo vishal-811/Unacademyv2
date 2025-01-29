@@ -3,6 +3,7 @@ import prisma from "../../lib";
 import WebSocket from "ws";
 import { RoleType } from "@prisma/client";
 import { BroadCastMessage } from "../lib/utils";
+import { Client } from "../..";
 
 enum RoomStatus {
   Waiting = "waiting",
@@ -27,14 +28,10 @@ export async function handleJoinRoom(
   ws: WebSocket,
   userToken: UserTokenData
 ) {
-
-  console.log("the data send by the user is",data);
   try {
-    console.log("user join the room");
     const { userId, role } = userToken;
-    console.log("the user userId is", userId);
-    console.log("the user role is", role);
-    if(!userId) ws.send(JSON.stringify({msg :"Please provuserIde the user userId"}));
+    if (!userId)
+      ws.send(JSON.stringify({ msg: "Please provuserIde the user userId" }));
     const userExist = await prisma.user.findFirst({
       where: {
         id: userId,
@@ -47,7 +44,6 @@ export async function handleJoinRoom(
     }
 
     const { roomId } = data;
-    console.log("the room id which the user wanna to join is", roomId);
     if (!roomId) {
       ws.send(JSON.stringify({ msg: "Please provide a room id" }));
       return;
@@ -65,6 +61,8 @@ export async function handleJoinRoom(
     }
 
     let room = roomsInfo.get(roomId);
+
+    const chatHistory = await Client.LRANGE(roomId, 0, -1);
 
     if (!room) {
       room = {
@@ -85,16 +83,20 @@ export async function handleJoinRoom(
         JSON.stringify({
           msg: "wait for the admin to join the meeting",
           state: room.state,
+          chat: chatHistory,
         })
       );
       return;
     }
+
     if (room && role === RoleType.instructor) {
       room.status = RoomStatus.Active;
       room.users = [...room.users, ws];
       room.users.forEach((user) => {
         if (user !== ws) {
-          user.send(JSON.stringify({ msg: "Admin join the meeting" }));
+          user.send(
+            JSON.stringify({ msg: "Admin join the meeting", chat: chatHistory })
+          );
         }
       });
 
@@ -105,8 +107,13 @@ export async function handleJoinRoom(
 
     if (room) {
       room.users = [...room.users, ws];
+      console.log("the room chat history is", chatHistory);
       ws.send(
-        JSON.stringify({ msg: "You joined the meeting", state: room.state })
+        JSON.stringify({
+          msg: "You joined the meeting",
+          state: room.state,
+          chat: chatHistory,
+        })
       );
     }
   } catch (error) {

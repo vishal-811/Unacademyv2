@@ -13,6 +13,8 @@ import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { useRoomJoin } from "../strore/useRoomJoin";
 import { ChatComponent } from "./Chat";
+import { useNewMsg } from "../strore/useMsg";
+import { useChatHistory } from "../strore/useChatHistory";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -28,6 +30,8 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
+  const setNewMsg = useNewMsg((state) => state.setNewMsg);
+  const setChatHistory = useChatHistory((state) => state.setChatHistory);
   const { RoomId } = useParams();
 
   const roomRef = useRef<Room | null>(null);
@@ -68,7 +72,16 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
 
     ws.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
-      const { msg, state } = parsedMessage;
+      console.log("the parsed msg is", parsedMessage);
+      const { msg, state, chat } = parsedMessage;
+      if(chat){
+        setChatHistory(chat)
+      }
+      console.log("msg", msg)
+      if (msg.eventType === "chat_event") {
+        const {message} = msg;
+        setNewMsg(message);
+      }
       if (
         msg === "wait for the admin to join the meeting" ||
         msg === "Admin join the meeting" ||

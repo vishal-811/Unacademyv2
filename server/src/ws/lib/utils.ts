@@ -30,7 +30,6 @@ export function BroadCastMessage(
     }
 
     room.users.map((user) => {
-      console.log("the response data is", message)
       user.send(JSON.stringify({msg : message}))
     })
   }

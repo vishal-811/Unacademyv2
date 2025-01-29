@@ -9,6 +9,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { handleWebsocketCloseEvent, handleWebsocketMessageEvent } from "./ws";
 import url from "url";
 import { extractAuthUser } from "./ws/auth/JwtHelper";
+import { createClient } from 'redis';
 
 const app = express();
 
@@ -34,17 +35,18 @@ export const wss = new WebSocketServer({ server });
 
 wss.on("connection", (ws: WebSocket, req) => {
   //  @ts-ignore
-  const token = url.parse(req.url, true).query.token as string;
+  const ParsedUrl = url.parse(req.url, true);
+  const token = ParsedUrl.query.token as string;
   const userToken = extractAuthUser(token, ws);
   if (userToken === null) {
     ws.send(JSON.stringify({ msg: "Please provide a valid token" }));
     return;
   }
+   
   ws.on("error", (error) => {
     console.error(error);
   });
   ws.on("message", (message: any) => {
-    console.log("Websocket server is hitted");
     handleWebsocketMessageEvent(message, ws, userToken);
   });
   ws.on("close", () => {
@@ -61,6 +63,19 @@ app.get("/", (req, res) => {
   res.send("hehe");
 });
 
+export const Client = createClient({
+   url :"redis://localhost:6379"
+});
+
+(async()=>{
+try {
+  await Client.connect();
+  console.log("connected to the redis successfully");
+} catch (error) {
+  console.log(error);
+  console.log("error while connecting to the redis");
+}
 server.listen(3000, () => {
   console.log("Server is running on port 3000");
 });
+})();

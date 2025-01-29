@@ -15,7 +15,7 @@ export function handleWebsocketMessageEvent(
   console.log("message function invoked");
   const parsedData = JSON.parse(message.toString());
   const { type, data } = parsedData;
-  const { userId, role } = userToken;
+  const { role } = userToken;
   switch (type) {
     case "join_room": {
       handleJoinRoom(data, ws, userToken);

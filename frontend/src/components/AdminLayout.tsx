@@ -17,41 +17,67 @@ import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
 import {
   createLocalAudioTrack,
+  createLocalScreenTracks,
   createLocalVideoTrack,
   Room,
+  Track,
   VideoPresets,
 } from "livekit-client";
 import { useRef } from "react";
 import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { ChatComponent } from "./Chat";
+import { useNewMsg } from "../strore/useMsg";
 
 export default function AdminLayout() {
+  const liveKitToken = localStorage.getItem("liveKitToken");
+  if (!liveKitToken) return null;
+
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<
     "excalidraw" | "screenshare" | "video"
   >("video");
 
-  const [roomId, setRoomId] = useState<string | null>(null);
   const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
-  const liveKitToken = localStorage.getItem("liveKitToken");
-  const { RoomId } = useParams();
+  const setNewMsg = useNewMsg((state) => state.setNewMsg);
+  const { RoomId } = useParams<string>();
 
   const roomRef = useRef<Room | null>(null);
   const socket = useRef<WebSocket | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // const shareScreenRef = useRef<LocalTrack[] | null>(null);
+  const shareScreenVideoRef = useRef<HTMLVideoElement | null>(null);
+  const shareScreenAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  if (!liveKitToken) return null;
+  if (!RoomId) return;
 
-  const { room, connection } = useLiveKit(liveKitToken, roomRef);
+  const { videoRef, audioRef, room, connection } = useLiveKit(
+    liveKitToken,
+    roomRef
+  );
+
+  async function handleShareScreen(room: Room | null) {
+    if (!room) return;
+    setActiveScreen("screenshare");
+    await room.localParticipant.setScreenShareEnabled(true);
+
+    const screenShareTrack = await createLocalScreenTracks({
+      audio: true,
+    });
+
+    screenShareTrack.map((track) => {
+      if (track.kind === Track.Kind.Video) {
+        track.attach(shareScreenVideoRef.current!);
+      }
+      if (track.kind === Track.Kind.Video) {
+        track.attach(shareScreenAudioRef.current!);
+      }
+    });
+  }
 
   useEffect(() => {
     if (Socket || !connection || !RoomId) return;
-
-    setRoomId(RoomId);
     const token_url = Cookies.get("token");
 
     let ws = socket.current;
@@ -72,9 +98,10 @@ export default function AdminLayout() {
 
     ws.onmessage = (message: any) => {
       const { msg } = JSON.parse(message.data);
-      if(msg.eventType === 'chat_event'){
-        console.log("the message is",msg.message)
-        console.log("the sender is", msg.messageSender)
+      if (msg.eventType === "chat_event") {
+        const { message } = msg;
+        console.log("the new msg is", message)
+        setNewMsg(message);
       }
       if (msg === "u joined the meeting sucessfully") {
         toast.success("You Joined the meeting!");
@@ -85,7 +112,6 @@ export default function AdminLayout() {
 
     (async () => {
       if (!liveKitToken || !room) return;
-
       try {
         await room.localParticipant.setCameraEnabled(true);
         await room.localParticipant.setMicrophoneEnabled(true);
@@ -109,7 +135,7 @@ export default function AdminLayout() {
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);
       } catch (error) {
-        console.error("An error occurred during LiveKit setup:", error);
+        toast.error("error in connecting to the livekit serrver");
       }
     })();
 
@@ -119,7 +145,7 @@ export default function AdminLayout() {
           JSON.stringify({
             type: "leave_room",
             data: {
-              roomId: roomId,
+              roomId: RoomId,
             },
           })
         );
@@ -132,6 +158,7 @@ export default function AdminLayout() {
         room.disconnect();
       }
       localStorage.removeItem("liveKitToken");
+      setSocket(null);
     };
   }, [RoomId, liveKitToken, connection]);
 
@@ -141,7 +168,7 @@ export default function AdminLayout() {
       JSON.stringify({
         type: "switch_event",
         data: {
-          roomId: roomId,
+          roomId: RoomId,
           eventType: type,
         },
       })
@@ -159,9 +186,15 @@ export default function AdminLayout() {
           }`}
         >
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
-          {activeScreen === "screenshare" && (
+          {activeScreen === "screenshare"  && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
-              Screen Share
+              <video
+                ref={shareScreenVideoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <audio ref={shareScreenAudioRef} autoPlay />
             </div>
           )}
           {/* Video */}
@@ -188,10 +221,7 @@ export default function AdminLayout() {
 
       {/* Control panel */}
       <div className="flex flex-wrap items-center gap-2 mx-auto">
-        <CustomButton
-          onClick={() => setActiveScreen("screenshare")}
-          variant="outline"
-        >
+        <CustomButton onClick={() => handleShareScreen(room)} variant="outline">
           <Share className="mr-2 h-4 w-4" /> Share Screen
         </CustomButton>
         <CustomButton onClick={() => {}} variant="outline">

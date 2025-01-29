@@ -1,20 +1,22 @@
 import WebSocket from "ws";
 import { ChatEventData } from "../types";
 import { BroadCastMessageInRoom } from "../lib/utils";
+import { Client } from "../..";
 
 
 
-export function handleChatEvent(msg : ChatEventData ,ws : WebSocket){
-    console.log("chat event occured", msg);
+export async function handleChatEvent(msg : ChatEventData ,ws : WebSocket){
     const { roomId, message } = msg;
-    console.log("The message is", message);
-    console.log("the roomId is", roomId);
-
     const data ={
         eventType :'chat_event',
         message : message,
         messageSender : ws
     }
-    
-    BroadCastMessageInRoom(roomId,ws,data)
+     // storing chat in a redis db 
+    const redisDbRoomSize = await  Client.lLen(roomId);
+    if(redisDbRoomSize >= 50){
+       await  Client.LTRIM(roomId,0,50-1); // delete the last message.
+    }
+      await Client.lPush(roomId, message);
+    BroadCastMessageInRoom(roomId,ws,data);
 }
