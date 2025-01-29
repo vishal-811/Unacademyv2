@@ -100,7 +100,6 @@ export default function AdminLayout() {
       const { msg } = JSON.parse(message.data);
       if (msg.eventType === "chat_event") {
         const { message } = msg;
-        console.log("the new msg is", message)
         setNewMsg(message);
       }
       if (msg === "u joined the meeting sucessfully") {

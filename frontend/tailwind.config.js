@@ -17,6 +17,9 @@ export default {
         ".hide-scrollbar::-webkit-scrollbar": {
           display: "none", /* For Chrome, Safari, and Opera */
         },
+        ".smooth-scroll": {
+          "scroll-behavior": "smooth", /* Makes scrolling smooth */
+        },
       });
     },
   ],

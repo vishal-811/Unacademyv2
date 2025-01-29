@@ -107,7 +107,7 @@ export async function handleJoinRoom(
 
     if (room) {
       room.users = [...room.users, ws];
-      console.log("the room chat history is", chatHistory);
+
       ws.send(
         JSON.stringify({
           msg: "You joined the meeting",
@@ -126,7 +126,6 @@ export function handleLeaveRoom(
   ws: WebSocket,
   role: RoleType
 ) {
-  console.log("hitted the handle leave room function");
   try {
     const { roomId } = data;
     let room = roomsInfo.get(roomId)?.users;
@@ -140,11 +139,9 @@ export function handleLeaveRoom(
       ws.send(JSON.stringify({ msg: "you leave the meeting" }));
       return roomsInfo.delete(roomId);
     }
-    console.log("before the updation", room.length);
     room = room.filter((user: WebSocket) => {
       return user != ws;
     });
-    console.log("after the updation", room.length);
     ws.send(JSON.stringify({ msg: "You leave the meeting" }));
     return;
   } catch (error) {

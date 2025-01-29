@@ -47,8 +47,6 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
   roomRef.current = room;
   useEffect(() => {
     if (Socket || !connection) return;
-
-    console.log("the connection to the ws");
     if (RoomId) {
       setRoomId(RoomId);
     }
@@ -72,12 +70,10 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
 
     ws.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
-      console.log("the parsed msg is", parsedMessage);
       const { msg, state, chat } = parsedMessage;
       if(chat){
         setChatHistory(chat)
       }
-      console.log("msg", msg)
       if (msg.eventType === "chat_event") {
         const {message} = msg;
         setNewMsg(message);
