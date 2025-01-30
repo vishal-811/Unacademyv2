@@ -16,7 +16,6 @@ export default function useLiveKit(
   const [connection, setConnection] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log("the custom hook is called");
     if (!liveKitToken) {
       console.error("LiveKit token is missing!");
       return;
@@ -34,8 +33,6 @@ export default function useLiveKit(
     roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
     function handleTrackSubscribe(track: RemoteTrack) {
-      console.log("track is", track);
-
       if (track.kind === Track.Kind.Video) {
         track.attach(videoRef.current!);
       }

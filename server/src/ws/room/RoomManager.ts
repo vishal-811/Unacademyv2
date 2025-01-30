@@ -13,8 +13,8 @@ enum RoomStatus {
 export enum RoomState {
   Video = "switch_to_video",
   ExcaliDraw = "switch_to_excalidraw",
-  ScreenShare ="switch_to_screen_share",
-  slides = "switch_to_slides"
+  ScreenShare = "switch_to_screen_share",
+  slides = "switch_to_slides",
 }
 
 interface RoomDetails {
@@ -31,12 +31,14 @@ export async function handleJoinRoom(
   userToken: UserTokenData
 ) {
   try {
-    const { userId, role } = userToken;
-    if (!userId)
-      ws.send(JSON.stringify({ msg: "Please provide the userId" }));
+    const userId = userToken.userId;
+    if (!userId) ws.send(JSON.stringify({ msg: "Please provide the userId" }));
     const userExist = await prisma.user.findFirst({
       where: {
         id: userId,
+      },
+      select: {
+        role: true,
       },
     });
 
@@ -44,7 +46,7 @@ export async function handleJoinRoom(
       ws.send(JSON.stringify({ msg: "No user exist with this user Id" }));
       return;
     }
-
+    const role = userExist.role;
     const { roomId } = data;
     if (!roomId) {
       ws.send(JSON.stringify({ msg: "Please provide a room id" }));
@@ -63,7 +65,7 @@ export async function handleJoinRoom(
     }
 
     let room = roomsInfo.get(roomId);
-    
+
     // Get the chat from the redis db.
     const chatHistory = await Client.LRANGE(roomId, 0, -1);
 
@@ -129,6 +131,7 @@ export function handleLeaveRoom(
   ws: WebSocket,
   role: RoleType
 ) {
+   console.log("THe role of the user when leave the meeting ", role);
   try {
     const { roomId } = data;
     let room = roomsInfo.get(roomId)?.users;

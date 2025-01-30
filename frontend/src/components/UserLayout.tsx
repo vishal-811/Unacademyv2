@@ -96,9 +96,7 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
       if (!msg) return;
 
       let { data } = msg;
-      console.log("the data is 1", data);
       if (state) {
-        console.log("why me call!!! 2");
         let currState = state === "switch_to_video" ? "video" : "excalidraw";
         if (state === "switch_to_screen_share") currState = "screen_share";
         data = currState;
@@ -107,13 +105,10 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
         data !== undefined &&
         (data === "video" || data === "excalidraw" || data === "screen_share")
       ) {
-        console.log(3);
         const currentScreen = data;
-        // currentScreen === "video"
         if (currentScreen === "video") setActiveScreen("video");
         else if (currentScreen === "excalidraw") setActiveScreen("excalidraw");
         else if (currentScreen === "screen_share") {
-          console.log("mia khalifa");
           setActiveScreen("screen_share");
         }
       } else if (data) {
@@ -158,8 +153,8 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
             <div
               className={`absolute ${
                 activeScreen === "video"
-                  ? "w-full h-full"
-                  : "top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg shadow-lg z-50"
+                  ? "w-full h-full object-cover"
+                  : "top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-xl shadow-lg z-50"
               }`}
             >
               <video

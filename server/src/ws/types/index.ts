@@ -7,7 +7,8 @@ export interface RoomEventData {
 
 export interface UserTokenData {
   userId: string; //user ID
-  role: RoleType;
+  role?: RoleType;
+  isadmin? : boolean
 }
 
 export interface ExcaliDrawEventData {

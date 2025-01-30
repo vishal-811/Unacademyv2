@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Book, Users, Calendar, User, Menu, X } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useRole } from "../strore/useRole";
 import { useAuth } from "../strore/useAuth";
 import { useIsJoinRoomClicked, useRoomJoin } from "../strore/useRoomJoin";
+import axios from "axios";
+import { toast } from "sonner";
 
 const navItems = [
   { name: "Courses", href: "/courses", icon: Book },
@@ -22,6 +24,26 @@ const Navbar = () => {
   );
   const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
   const navigate = useNavigate();
+  const { RoomId } = useParams<string>();
+
+  async function handleLeaveRoom() {
+    try {
+      const res = await axios.post(
+        `http://localhost:3000/api/v1/room/leave-room/${RoomId}`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+  
+      if (res.status === 201) {
+        setIsRoomJoined(false);
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error("Failed to leave the meeting")
+    }
+  }
 
   const renderButton = () => {
     if (!isLoggedIn) {
@@ -60,8 +82,7 @@ const Navbar = () => {
     return isRoomJoined ? (
       <button
         onClick={() => {
-          setIsRoomJoined(false);
-          navigate("/");
+          handleLeaveRoom();
         }}
         className="flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-300"
       >
