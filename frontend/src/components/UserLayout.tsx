@@ -15,6 +15,7 @@ import { useRoomJoin } from "../strore/useRoomJoin";
 import { ChatComponent } from "./Chat";
 import { useNewMsg } from "../strore/useMsg";
 import { useChatHistory } from "../strore/useChatHistory";
+import Draggable from "react-draggable";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -22,9 +23,9 @@ interface userLayoutProps {
 
 export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const [hidepanel, setIsHidePanel] = useState(false);
-  const [activeScreen, setActiveScreen] = useState<"excalidraw" | "video">(
-    "video"
-  );
+  const [activeScreen, setActiveScreen] = useState<
+    "excalidraw" | "video" | "screen_share"
+  >("video");
   const [roomId, setRoomId] = useState<string | null>(null);
   const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
@@ -71,11 +72,11 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
     ws.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
       const { msg, state, chat } = parsedMessage;
-      if(chat){
-        setChatHistory(chat)
+      if (chat) {
+        setChatHistory(chat);
       }
       if (msg.eventType === "chat_event") {
-        const {message} = msg;
+        const { message } = msg;
         setNewMsg(message);
       }
       if (
@@ -85,23 +86,36 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
       ) {
         toast.info(msg);
       }
+
       if (msg === "Admin leave the meeting") {
         toast.warning(msg);
         setIsRoomJoined(false);
         navigate("/");
       }
-      if (!msg) return;
-      let { data } = msg;
 
+      if (!msg) return;
+
+      let { data } = msg;
+      console.log("the data is 1", data);
       if (state) {
+        console.log("why me call!!! 2");
         let currState = state === "switch_to_video" ? "video" : "excalidraw";
+        if (state === "switch_to_screen_share") currState = "screen_share";
         data = currState;
       }
-      if (data !== undefined && (data === "video" || data === "excalidraw")) {
+      if (
+        data !== undefined &&
+        (data === "video" || data === "excalidraw" || data === "screen_share")
+      ) {
+        console.log(3);
         const currentScreen = data;
-        currentScreen === "video"
-          ? setActiveScreen("video")
-          : setActiveScreen("excalidraw");
+        // currentScreen === "video"
+        if (currentScreen === "video") setActiveScreen("video");
+        else if (currentScreen === "excalidraw") setActiveScreen("excalidraw");
+        else if (currentScreen === "screen_share") {
+          console.log("mia khalifa");
+          setActiveScreen("screen_share");
+        }
       } else if (data) {
         const appState = data;
         const dummyApp = { ...appState, collaborators: [] };
@@ -137,44 +151,47 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
           }`}
         >
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
+          {activeScreen === "screen_share" && <div>Share Screen</div>}
 
           {/* Video */}
-          <div
-            className={`${
-              activeScreen === "video"
-                ? "absolute w-full h-full"
-                : "absolute top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50"
-            }`}
-          >
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <audio ref={audioRef} autoPlay />
-          </div>
+          <Draggable disabled={activeScreen === "video"}>
+            <div
+              className={`absolute ${
+                activeScreen === "video"
+                  ? "w-full h-full"
+                  : "top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg shadow-lg z-50"
+              }`}
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <audio ref={audioRef} autoPlay />
+            </div>
+          </Draggable>
         </motion.div>
 
         {/* Chat */}
         {!hidepanel && <ChatComponent />}
       </div>
-       
-       <div className="absolute bottom-4 right-4">
-       {hidepanel ? (
-        <CustomButton onClick={() => setIsHidePanel(false)} variant="outline">
-          <Maximize2 className="max-h-4  max-w-w-4" /> Show Chat
-        </CustomButton>
-      ) : (
-        <CustomButton onClick={() => setIsHidePanel(true)} variant="outline">
-          <Minimize2
-            className=" 
+
+      <div className="absolute bottom-4 right-4">
+        {hidepanel ? (
+          <CustomButton onClick={() => setIsHidePanel(false)} variant="outline">
+            <Maximize2 className="max-h-4  max-w-w-4" /> Show Chat
+          </CustomButton>
+        ) : (
+          <CustomButton onClick={() => setIsHidePanel(true)} variant="outline">
+            <Minimize2
+              className=" 
             max-h-4 max-w-4"
-          />{" "}
-          Hide Chat
-        </CustomButton>
-      )}
-       </div>
+            />{" "}
+            Hide Chat
+          </CustomButton>
+        )}
+      </div>
     </div>
   );
 }

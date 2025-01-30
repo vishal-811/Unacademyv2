@@ -1,25 +1,26 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Send } from "lucide-react";
-import { useSocket } from "../strore/useSocket";
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { toast } from "sonner";
-import { useNewMsg } from "../strore/useMsg";
-import { useChatHistory } from "../strore/useChatHistory";
+import { motion, AnimatePresence } from "framer-motion"
+import { Send } from "lucide-react"
+import { useSocket } from "../strore/useSocket"
+import { useEffect, useState, useRef } from "react"
+import { useParams } from "react-router-dom"
+import { toast } from "sonner"
+import { useNewMsg } from "../strore/useMsg"
+import { useChatHistory } from "../strore/useChatHistory"
 
 export const ChatComponent = () => {
-  const [msg, setMsg] = useState<string>("");
-  const [allMsg, setAllMsg] = useState<string[]>([]);
-  const newMsg = useNewMsg((state) => state.newMsg);
-  const Socket = useSocket((state) => state.socket);
-  const chatHistory = useChatHistory((state) => state.chatHistory);
-  const { RoomId } = useParams<string>();
+  const [msg, setMsg] = useState<string>("")
+  const [allMsg, setAllMsg] = useState<string[]>([])
+  const newMsg = useNewMsg((state) => state.newMsg)
+  const Socket = useSocket((state) => state.socket)
+  const chatHistory = useChatHistory((state) => state.chatHistory)
+  const { RoomId } = useParams<string>()
+  const chatHistoryRef = useRef<HTMLDivElement>(null)
 
   function handleMessage(msg: string | null) {
     if (!Socket || !msg || !RoomId) {
-      toast.info("something went wrong");
-      if (msg) setMsg("");
-      return;
+      toast.info("Something went wrong")
+      if (msg) setMsg("")
+      return
     }
     try {
       if (Socket?.readyState === WebSocket.OPEN) {
@@ -30,81 +31,84 @@ export const ChatComponent = () => {
               roomId: RoomId,
               message: msg,
             },
-          })
-        );
+          }),
+        )
       } else {
-        throw new Error("ws connection is closed");
+        throw new Error("WebSocket connection is closed")
       }
     } catch (error) {
-      toast.warning("error in sending message");
+      toast.warning("Error in sending message")
     } finally {
-      setMsg("");
+      setMsg("")
     }
   }
 
   useEffect(() => {
-    if (!newMsg) return;
-    setAllMsg((prevMsg) => [...prevMsg, newMsg]);
-  }, [newMsg]);
+    if (!newMsg) return
+    setAllMsg((prevMsg) => [...prevMsg, newMsg])
+  }, [newMsg])
 
   useEffect(() => {
-    if (!chatHistory) return;
-    setAllMsg((prevMsg) => [...prevMsg, ...chatHistory]); //functional updates are safer.
-  }, [chatHistory]);
+    if (!chatHistory) return
+    setAllMsg((prevMsg) => [...prevMsg, ...chatHistory])
+  }, [chatHistory])
 
   useEffect(() => {
-    const chatHistoryDiv = document.querySelector('.flex-1');
-    chatHistoryDiv!.scrollTop = chatHistoryDiv!.scrollHeight;
-  },[allMsg])
+    if (chatHistoryRef.current) {
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight
+    }
+  }, [allMsg])
+
   return (
-    <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl shadow-lg h-full flex flex-col">
-    <AnimatePresence>
-      <motion.div
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: "25%", opacity: 1 }}
-        exit={{ width: 0, opacity: 0 }}
-        transition={{ duration: 0.3 }}
-        className="relative min-w-[300px] bg-white border border-gray-200 rounded-xl shadow-lg h-full flex flex-col"
-      >
-        {/* Chat Header */}
-        <h2
-          className="text-xl font-semibold text-gray-800 backdrop-blur-3xl 
-          py-2 px-4 border-b border-slate-100 rounded-tl-xl rounded-tr-xl bg-white sticky top-0 z-10"
+    <div className="relative bg-gradient-to-br from-teal-50 to-cyan-100 rounded-xl shadow-lg h-full flex flex-col">
+      <AnimatePresence>
+        <motion.div
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: "100%", opacity: 1 }}
+          exit={{ width: 0, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="relative w-full max-w-md mx-auto bg-white rounded-xl shadow-lg h-full flex flex-col overflow-hidden"
         >
-          Chat Messages
-        </h2>
-  
-        {/* Chat History */}
-        <div className="flex-1 overflow-auto p-4 space-y-2 hide-scrollbar scroll-smooth">
-          {allMsg &&
-            allMsg.map((chat, index) => (
-              <div key={index} className="ps-2 pe-2 pb-1">
-                <div className="p-3 rounded-xl bg-blue-50 text-blue-800 shadow">
-                  {chat}
-                </div>
-              </div>
+          {/* Chat Header */}
+          <h2 className="text-xl font-bold text-teal-800 py-4 px-6 bg-gradient-to-r from-teal-100 to-cyan-100 rounded-t-xl sticky top-0 z-10 shadow-sm">
+            Chat Messages
+          </h2>
+
+          {/* Chat History */}
+          <div ref={chatHistoryRef} className="flex-1 overflow-y-auto p-4 space-y-3 hide-scrollbar scroll-smooth">
+            {allMsg.map((chat, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="max-w-[80%] break-words"
+              >
+                <div className="p-3 rounded-lg bg-teal-50 text-teal-800 shadow-sm">{chat}</div>
+              </motion.div>
             ))}
-        </div>
-  
-        {/* Chat Input Section */}
-        <div className="w-full flex items-center space-x-3 p-4 bg-gray-50 border-t border-gray-200">
-          <input
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="Type a message..."
-            type="text"
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <button
-            onClick={() => handleMessage(msg)}
-            className="p-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition-transform transform hover:scale-105"
-          >
-            <Send className="h-5 w-5" />
-          </button>
-        </div>
-      </motion.div>
-    </AnimatePresence>
-  </div>
-  
-  );
-};
+          </div>
+
+          {/* Chat Input Section */}
+          <div className="w-full flex items-center space-x-3 p-4 bg-white border-t border-teal-100 rounded-b-xl">
+            <input
+              value={msg}
+              onChange={(e) => setMsg(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleMessage(msg)}
+              placeholder="Type a message..."
+              type="text"
+              className="flex-1 px-4 py-2 rounded-full border border-teal-200 bg-teal-50 text-teal-800 placeholder-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-300 focus:border-transparent"
+            />
+            <button
+              onClick={() => handleMessage(msg)}
+              className="p-3 rounded-full bg-teal-500 hover:bg-teal-600 text-white shadow-md transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-400"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
+}
+

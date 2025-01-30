@@ -28,6 +28,7 @@ import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { ChatComponent } from "./Chat";
 import { useNewMsg } from "../strore/useMsg";
+import Draggable from "react-draggable";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
@@ -66,12 +67,18 @@ export default function AdminLayout() {
       audio: true,
     });
 
-    screenShareTrack.map((track) => {
-      if (track.kind === Track.Kind.Video) {
-        track.attach(shareScreenVideoRef.current!);
-      }
-      if (track.kind === Track.Kind.Video) {
-        track.attach(shareScreenAudioRef.current!);
+    screenShareTrack.map(async(track) => {
+      try {
+        if (track.kind === Track.Kind.Video) {
+          track.attach(shareScreenVideoRef.current!);
+          await room.localParticipant.publishTrack(track)
+        }
+        if (track.kind === Track.Kind.Video) {
+          track.attach(shareScreenAudioRef.current!);
+          await room.localParticipant.publishTrack(track);
+        }
+      } catch (error) {
+        console.log("error in publishing the screenShareTrack to the client");
       }
     });
   }
@@ -196,7 +203,9 @@ export default function AdminLayout() {
               <audio ref={shareScreenAudioRef} autoPlay />
             </div>
           )}
-          {/* Video */}
+
+           {/* Video */}
+        <Draggable disabled ={activeScreen === "video"}>
           <div
             className={`${
               activeScreen === "video"
@@ -212,15 +221,18 @@ export default function AdminLayout() {
             />
             <audio ref={audioRef} autoPlay />
           </div>
+          </Draggable>
         </motion.div>
 
         {/* Chat panel */}
         {!hidepanel && <ChatComponent />}
       </div>
-
       {/* Control panel */}
       <div className="flex flex-wrap items-center gap-2 mx-auto">
-        <CustomButton onClick={() => handleShareScreen(room)} variant="outline">
+        <CustomButton onClick={() => {
+          handleShareScreen(room);
+          handleSendEvent("switch_to_screen_share");
+        }} variant="outline">
           <Share className="mr-2 h-4 w-4" /> Share Screen
         </CustomButton>
         <CustomButton onClick={() => {}} variant="outline">

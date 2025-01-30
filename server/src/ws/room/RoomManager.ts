@@ -13,6 +13,8 @@ enum RoomStatus {
 export enum RoomState {
   Video = "switch_to_video",
   ExcaliDraw = "switch_to_excalidraw",
+  ScreenShare ="switch_to_screen_share",
+  slides = "switch_to_slides"
 }
 
 interface RoomDetails {
@@ -31,7 +33,7 @@ export async function handleJoinRoom(
   try {
     const { userId, role } = userToken;
     if (!userId)
-      ws.send(JSON.stringify({ msg: "Please provuserIde the user userId" }));
+      ws.send(JSON.stringify({ msg: "Please provide the userId" }));
     const userExist = await prisma.user.findFirst({
       where: {
         id: userId,
@@ -61,7 +63,8 @@ export async function handleJoinRoom(
     }
 
     let room = roomsInfo.get(roomId);
-
+    
+    // Get the chat from the redis db.
     const chatHistory = await Client.LRANGE(roomId, 0, -1);
 
     if (!room) {
