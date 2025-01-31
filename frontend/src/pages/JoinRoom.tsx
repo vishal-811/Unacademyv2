@@ -8,7 +8,6 @@ import { toast } from "sonner";
 export default function JoinRoom() {
   const { RoomId } = useParams<{ RoomId: string }>();
   const [isValidRoom, setIsValidRoom] = useState<boolean>(false);
-
   const setIsRoomJoined = useRoomJoin((state) => state.setIsRoomJoined);
   useEffect(() => {
     async function isRoomExist() {

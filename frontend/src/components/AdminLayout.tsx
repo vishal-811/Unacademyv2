@@ -29,20 +29,23 @@ import { toast } from "sonner";
 import { ChatComponent } from "./Chat";
 import { useNewMsg } from "../strore/useMsg";
 import Draggable from "react-draggable";
+import { Loader } from "./Loader";
+import axios from "axios";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
   if (!liveKitToken) return null;
-
+  console.log("the livekitToken is", liveKitToken);
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<
-    "excalidraw" | "screenshare" | "video"
+    "excalidraw" | "screenshare" | "video" | "slides"
   >("video");
 
   const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const setNewMsg = useNewMsg((state) => state.setNewMsg);
+  const [uploaded, setUploaded] = useState<boolean>(false);
   const { RoomId } = useParams<string>();
 
   const roomRef = useRef<Room | null>(null);
@@ -67,11 +70,11 @@ export default function AdminLayout() {
       audio: true,
     });
 
-    screenShareTrack.map(async(track) => {
+    screenShareTrack.map(async (track) => {
       try {
         if (track.kind === Track.Kind.Video) {
           track.attach(shareScreenVideoRef.current!);
-          await room.localParticipant.publishTrack(track)
+          await room.localParticipant.publishTrack(track);
         }
         if (track.kind === Track.Kind.Video) {
           track.attach(shareScreenAudioRef.current!);
@@ -192,7 +195,7 @@ export default function AdminLayout() {
           }`}
         >
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
-          {activeScreen === "screenshare"  && (
+          {activeScreen === "screenshare" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
               <video
                 ref={shareScreenVideoRef}
@@ -203,24 +206,31 @@ export default function AdminLayout() {
               <audio ref={shareScreenAudioRef} autoPlay />
             </div>
           )}
+          {activeScreen === "slides" && !uploaded ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <UploadSlides />
+            </div>
+          ) : (
+            activeScreen === "slides" && <div>Your slides are</div>
+          )}
 
-           {/* Video */}
-        <Draggable disabled ={activeScreen === "video"}>
-          <div
-            className={`${
-              activeScreen === "video"
-                ? "absolute w-full h-full"
-                : "absolute top-16 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50 bg-opacity-100 object-cover"
-            }`}
-          >
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <audio ref={audioRef} autoPlay />
-          </div>
+          {/* Video */}
+          <Draggable disabled={activeScreen === "video"}>
+            <div
+              className={`${
+                activeScreen === "video"
+                  ? "absolute w-full h-full"
+                  : "absolute top-16 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50 bg-opacity-100 object-cover"
+              }`}
+            >
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+              <audio ref={audioRef} autoPlay />
+            </div>
           </Draggable>
         </motion.div>
 
@@ -229,13 +239,21 @@ export default function AdminLayout() {
       </div>
       {/* Control panel */}
       <div className="flex flex-wrap items-center gap-2 mx-auto">
-        <CustomButton onClick={() => {
-          handleShareScreen(room);
-          handleSendEvent("switch_to_screen_share");
-        }} variant="outline">
+        <CustomButton
+          onClick={() => {
+            handleShareScreen(room);
+            handleSendEvent("switch_to_screen_share");
+          }}
+          variant="outline"
+        >
           <Share className="mr-2 h-4 w-4" /> Share Screen
         </CustomButton>
-        <CustomButton onClick={() => {}} variant="outline">
+        <CustomButton
+          onClick={() => {
+            setActiveScreen("slides");
+          }}
+          variant="outline"
+        >
           <FileUp className="mr-2 h-4 w-4" /> Upload PDF
         </CustomButton>
         <CustomButton
@@ -276,3 +294,74 @@ export default function AdminLayout() {
     </div>
   );
 }
+
+const UploadSlides = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  // const [error, setError] = useState<boolean>(false);
+
+  async function handleUploadPdf(file: File) {
+    if (!file || file.type !== "application/pdf") return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setLoading(true);
+      const res = await axios.post(
+        "http://localhost:3000/api/v1/room/Upload-pdf",
+         formData,
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (res.status === 200) {
+        console.log("Pdf uploaded successfully");
+      }
+    } catch (error) {
+      toast.error("something went wrong in uploading pdf");
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <>
+       <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+        <div className="flex flex-col space-y-4">
+          <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700">
+            Upload PDF
+          </label>
+          <div className="relative">
+            <input
+              id="file-upload"
+              type="file"
+              accept=".pdf"
+              className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-full file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-50 file:text-blue-700
+                        hover:file:bg-blue-100"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  setFile(e.target.files[0])
+                }
+              }}
+            />
+          </div>
+          {file && (
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              onClick={() => handleUploadPdf(file)}
+              disabled={loading}
+            >
+              Upload
+            </button>
+          )}
+        </div>
+      </div>
+      {loading && <Loader />}
+    </>
+  );
+};
