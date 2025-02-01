@@ -4,7 +4,7 @@ export const ApiResponse = (
     res: Response,
     code: number,
     success: boolean,
-    message: string
+    message: string 
 ) => {
     res.status(code).json({
         success: success,
@@ -18,8 +18,11 @@ export const ApiSuccessResponse = (
     code: number,
     success: boolean,
     message: string,
-    data: object | string | null
+    data?: object | string
 ) => {
     res.status(code).json({ success: success, message: message, data: data });
     return;
 };
+
+
+//  const responseMessage = error instanceof Error ? error.message : message ?? "Internal Server Error" Suksham ko hire kro 

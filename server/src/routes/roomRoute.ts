@@ -7,6 +7,19 @@ import {
 import { authMiddleware } from "../middleware";
 import { ApiResponse, ApiSuccessResponse } from "../lib/apiResponse";
 import GenerateLiveKitToken from "../lib/generateLiveKitToken";
+import multer from "multer";
+import { PdfToSlides } from "../lib/pdfToslides";
+import path from "path";
+import { GetPreSignedUrl, UploadToS3 } from "../lib/aws";
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) =>
+    cb(null, path.resolve(__dirname, "../../uploads/pdfs")),
+  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
+});
+
+const upload = multer({ storage });
+
 const router = Router();
 
 router.post(
@@ -69,9 +82,9 @@ router.post(
         roomId: room.id,
         liveKitToken: liveKitToken,
       });
-    } catch (error) {
-      console.log("the error is", error);
-      return ApiResponse(res, 500, false, "Internal server Error");
+    } catch (error : any) {
+      console.error("the error is", error);
+      ApiResponse(res, 500, false, "Internal Server");
     }
   }
 );
@@ -147,16 +160,21 @@ router.get(
         where: {
           id: roomId,
         },
-        select:{
-          isActive : true
-        }
+        select: {
+          isActive: true,
+        },
       });
       if (!isRoomExist) {
         return ApiResponse(res, 404, false, "No room exist with this roomId");
       }
-     
-      if(!isRoomExist.isActive){
-        return ApiResponse(res,410,false,"Meeting has been ended by the host!");
+
+      if (!isRoomExist.isActive) {
+        return ApiResponse(
+          res,
+          410,
+          false,
+          "Meeting has been ended by the host!"
+        );
       }
       return ApiSuccessResponse(res, 200, true, "ok", {});
     } catch (error: unknown) {
@@ -169,11 +187,11 @@ router.post(
   "/leave-Room/:roomId",
   authMiddleware,
   async (req: Request, res: Response) => {
-    console.log("Hitted")
+    console.log("Hitted");
     const roomId = req.params.roomId;
     console.log("the roomId is", roomId);
-    if(!roomId){
-      return ApiResponse(res,401,false,"please provide a roomId");
+    if (!roomId) {
+      return ApiResponse(res, 401, false, "please provide a roomId");
     }
 
     try {
@@ -208,4 +226,26 @@ router.post(
   }
 );
 
+router.post(
+  "/upload-pdf",
+  authMiddleware,
+  upload.single("file"),
+  async (req: Request, res: Response) => {
+    const fileName = req.file?.filename;
+    const filePath = req.file?.path;
+    try {
+      const response = await PdfToSlides(filePath!);
+      if (!response) {
+        throw new Error("Unable to convert the pdf to image");
+      }
+
+      // Upload the images to the s3.
+      await UploadToS3(fileName!);
+      const preSignedUrl = await GetPreSignedUrl(fileName!);
+      return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {preSignedUrl : preSignedUrl});
+    } catch (error) {
+      return ApiResponse(res, 500, false, "Internal Server Error");
+    }
+  }
+);
 export default router;
