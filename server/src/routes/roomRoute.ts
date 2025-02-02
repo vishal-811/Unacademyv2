@@ -241,8 +241,7 @@ router.post(
 
       // Upload the images to the s3.
       await UploadToS3(fileName!);
-      const preSignedUrl = await GetPreSignedUrl(fileName!);
-      return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {preSignedUrl : preSignedUrl});
+      return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {});
     } catch (error) {
       return ApiResponse(res, 500, false, "Internal Server Error");
     }
