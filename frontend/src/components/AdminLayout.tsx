@@ -35,7 +35,6 @@ import axios from "axios";
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
   if (!liveKitToken) return null;
-  console.log("the livekitToken is", liveKitToken);
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<
     "excalidraw" | "screenshare" | "video" | "slides"
@@ -76,7 +75,7 @@ export default function AdminLayout() {
           track.attach(shareScreenVideoRef.current!);
           await room.localParticipant.publishTrack(track);
         }
-        if (track.kind === Track.Kind.Video) {
+        if (track.kind === Track.Kind.Audio) {
           track.attach(shareScreenAudioRef.current!);
           await room.localParticipant.publishTrack(track);
         }
@@ -208,7 +207,7 @@ export default function AdminLayout() {
           )}
           {activeScreen === "slides" && !uploaded ? (
             <div className="w-full h-full flex items-center justify-center">
-              <UploadSlides />
+              <UploadSlides RoomId={RoomId} />
             </div>
           ) : (
             activeScreen === "slides" && <div>Your slides are</div>
@@ -295,7 +294,7 @@ export default function AdminLayout() {
   );
 }
 
-const UploadSlides = () => {
+const UploadSlides = ({ RoomId }: { RoomId: string }) => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   // const [error, setError] = useState<boolean>(false);
@@ -309,8 +308,8 @@ const UploadSlides = () => {
     try {
       setLoading(true);
       const res = await axios.post(
-        "http://localhost:3000/api/v1/room/Upload-pdf",
-         formData,
+        `http://localhost:3000/api/v1/room/Upload-pdf/${RoomId}`,
+        formData,
         {
           withCredentials: true,
         }
@@ -327,9 +326,12 @@ const UploadSlides = () => {
   }
   return (
     <>
-       <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
+      <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-xl shadow-md">
         <div className="flex flex-col space-y-4">
-          <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700">
+          <label
+            htmlFor="file-upload"
+            className="block text-sm font-medium text-gray-700"
+          >
             Upload PDF
           </label>
           <div className="relative">
@@ -345,7 +347,7 @@ const UploadSlides = () => {
                         hover:file:bg-blue-100"
               onChange={(e) => {
                 if (e.target.files && e.target.files.length > 0) {
-                  setFile(e.target.files[0])
+                  setFile(e.target.files[0]);
                 }
               }}
             />

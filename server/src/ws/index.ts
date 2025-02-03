@@ -14,14 +14,14 @@ export function handleWebsocketMessageEvent(
 ) {
   const parsedData = JSON.parse(message.toString());
   const { type, data } = parsedData;
-  const role = userToken.isadmin ? "instructor" : "student";
+  const role = userToken.role;
   switch (type) {
     case "join_room": {
       handleJoinRoom(data, ws, userToken);
       break;
     }
     case "leave_room": {
-      handleLeaveRoom(data, ws, role);
+      handleLeaveRoom(data, ws, role!);
       break;
     }
     case "excali_draw_event": {

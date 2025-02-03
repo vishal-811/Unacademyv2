@@ -131,7 +131,6 @@ export function handleLeaveRoom(
   ws: WebSocket,
   role: RoleType
 ) {
-   console.log("THe role of the user when leave the meeting ", role);
   try {
     const { roomId } = data;
     let room = roomsInfo.get(roomId)?.users;
@@ -139,7 +138,6 @@ export function handleLeaveRoom(
       ws.send(JSON.stringify({ msg: "No room exist with this room Id" }));
       return;
     }
-
     if (role === RoleType.instructor) {
       BroadCastMessage(roomId, ws, "Admin leave the meeting");
       ws.send(JSON.stringify({ msg: "you leave the meeting" }));

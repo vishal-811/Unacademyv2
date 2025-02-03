@@ -10,7 +10,7 @@ import GenerateLiveKitToken from "../lib/generateLiveKitToken";
 import multer from "multer";
 import { PdfToSlides } from "../lib/pdfToslides";
 import path from "path";
-import { GetPreSignedUrl, UploadToS3 } from "../lib/aws";
+import { UploadToS3 } from "../lib/aws";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) =>
@@ -227,11 +227,12 @@ router.post(
 );
 
 router.post(
-  "/upload-pdf",
+  "/upload-pdf/:RoomId",
   authMiddleware,
   upload.single("file"),
   async (req: Request, res: Response) => {
-    const fileName = req.file?.filename;
+    const {RoomId} = req.params;
+    console.log("the session id for this is", RoomId);
     const filePath = req.file?.path;
     try {
       const response = await PdfToSlides(filePath!);
@@ -240,7 +241,9 @@ router.post(
       }
 
       // Upload the images to the s3.
-      await UploadToS3(fileName!);
+      const imgurl = await  UploadToS3(RoomId);
+
+      
       return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {});
     } catch (error) {
       return ApiResponse(res, 500, false, "Internal Server Error");

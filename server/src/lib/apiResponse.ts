@@ -25,4 +25,4 @@ export const ApiSuccessResponse = (
 };
 
 
-//  const responseMessage = error instanceof Error ? error.message : message ?? "Internal Server Error" Suksham ko hire kro 
+//  const responseMessage = error instanceof Error ? error.message : message ?? "Internal Server Error"

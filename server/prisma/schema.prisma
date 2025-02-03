@@ -40,3 +40,9 @@ model Room {
   
   createdAt   DateTime @default(now())
 }
+
+model Images {
+  id String @id @default(uuid())
+  folderName String
+  imageId String
+}
