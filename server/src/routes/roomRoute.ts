@@ -11,6 +11,7 @@ import multer from "multer";
 import { PdfToSlides } from "../lib/pdfToslides";
 import path from "path";
 import { UploadToS3 } from "../lib/aws";
+import fs from "fs";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) =>
@@ -82,7 +83,7 @@ router.post(
         roomId: room.id,
         liveKitToken: liveKitToken,
       });
-    } catch (error : any) {
+    } catch (error: any) {
       console.error("the error is", error);
       ApiResponse(res, 500, false, "Internal Server");
     }
@@ -231,9 +232,9 @@ router.post(
   authMiddleware,
   upload.single("file"),
   async (req: Request, res: Response) => {
-    const {RoomId} = req.params;
-    console.log("the session id for this is", RoomId);
+    const SlideId = req.file?.filename;
     const filePath = req.file?.path;
+    const { RoomId } = req.params;
     try {
       const response = await PdfToSlides(filePath!);
       if (!response) {
@@ -241,10 +242,57 @@ router.post(
       }
 
       // Upload the images to the s3.
-      const imgurl = await  UploadToS3(RoomId);
+      const imgId = await UploadToS3(RoomId);
+      if (!imgId) {
+        throw new Error();
+      }
 
+      const ImageIdDb = imgId.map(async (id) => {
+        await prisma.image.create({
+          data: {
+            roomId: RoomId,
+            imageId: id,
+            slideId : SlideId!
+          },
+        });
+      });
+
+      await Promise.all(ImageIdDb);
       
       return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {});
+    } catch (error : any) {
+      console.error("the error occured is", error.message)
+      return ApiResponse(res, 500, false, "Internal Server Error");
+    }
+  }
+);
+
+router.get(
+  "/get-slides/:RoomId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    const slideId = req.body.fileName;
+    const roomId = req.params.RoomId;
+    if (!roomId)
+      return ApiResponse(res, 401, false, "Please Provide a Room Id");
+
+    try {
+      const imageurls = await prisma.image.findMany({
+        where: {
+          roomId: roomId,
+          slideId : slideId
+        },
+        orderBy: {
+          imageId: "asc",
+        },
+      });
+      return ApiSuccessResponse(
+        res,
+        200,
+        true,
+        "fetched images url successfully",
+        { imageurls: imageurls }
+      );
     } catch (error) {
       return ApiResponse(res, 500, false, "Internal Server Error");
     }

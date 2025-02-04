@@ -31,6 +31,7 @@ import { useNewMsg } from "../strore/useMsg";
 import Draggable from "react-draggable";
 import { Loader } from "./Loader";
 import axios from "axios";
+import { GetSlides } from "./getSlides";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
@@ -44,7 +45,7 @@ export default function AdminLayout() {
   const setSocket = useSocket((state) => state.setSocket);
   const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const setNewMsg = useNewMsg((state) => state.setNewMsg);
-  const [uploaded, setUploaded] = useState<boolean>(false);
+  const [pdfUploaded, setPdfUploaded] = useState<boolean>(false);
   const { RoomId } = useParams<string>();
 
   const roomRef = useRef<Room | null>(null);
@@ -205,12 +206,12 @@ export default function AdminLayout() {
               <audio ref={shareScreenAudioRef} autoPlay />
             </div>
           )}
-          {activeScreen === "slides" && !uploaded ? (
+          {activeScreen === "slides" && !pdfUploaded ? (
             <div className="w-full h-full flex items-center justify-center">
-              <UploadSlides RoomId={RoomId} />
+              <UploadSlides RoomId={RoomId} setPdfUploaded = {setPdfUploaded}/>
             </div>
           ) : (
-            activeScreen === "slides" && <div>Your slides are</div>
+            activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl bg-blue-600 w-full h-full object-cover"><GetSlides/></div>
           )}
 
           {/* Video */}
@@ -294,7 +295,7 @@ export default function AdminLayout() {
   );
 }
 
-const UploadSlides = ({ RoomId }: { RoomId: string }) => {
+const UploadSlides = ({ RoomId, setPdfUploaded }: { RoomId: string,setPdfUploaded : React.Dispatch<React.SetStateAction<boolean>>}) => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   // const [error, setError] = useState<boolean>(false);
@@ -304,6 +305,8 @@ const UploadSlides = ({ RoomId }: { RoomId: string }) => {
 
     const formData = new FormData();
     formData.append("file", file);
+    
+    const fileName = file.name;
 
     try {
       setLoading(true);
@@ -317,6 +320,7 @@ const UploadSlides = ({ RoomId }: { RoomId: string }) => {
 
       if (res.status === 200) {
         console.log("Pdf uploaded successfully");
+        setPdfUploaded(true);
       }
     } catch (error) {
       toast.error("something went wrong in uploading pdf");

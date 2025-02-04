@@ -38,11 +38,24 @@ model Room {
   creator     User     @relation("creatorToRoom", fields: [creatorId], references: [id])
   students    User[]   @relation("studentToRoom")
   
+  images    Image[]
   createdAt   DateTime @default(now())
 }
 
-model Images {
-  id String @id @default(uuid())
-  folderName String
+// model Images {
+//   id String @id @default(uuid())
+//   roomId String
+//   imageId String
+// }
+
+
+model Image {
+  id String @id @unique @default(uuid())
+  slideId String
   imageId String
+  
+  roomId String
+  room Room @relation(fields: [roomId],references: [id])
 }
+  
+
