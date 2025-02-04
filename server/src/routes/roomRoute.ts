@@ -12,11 +12,12 @@ import { PdfToSlides } from "../lib/pdfToslides";
 import path from "path";
 import { UploadToS3 } from "../lib/aws";
 import fs from "fs";
+import { ClearFolder } from "../lib/cleanFolder";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) =>
     cb(null, path.resolve(__dirname, "../../uploads/pdfs")),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
+  filename: (req, file, cb) => cb(null, file.originalname),
 });
 
 const upload = multer({ storage });
@@ -188,9 +189,7 @@ router.post(
   "/leave-Room/:roomId",
   authMiddleware,
   async (req: Request, res: Response) => {
-    console.log("Hitted");
     const roomId = req.params.roomId;
-    console.log("the roomId is", roomId);
     if (!roomId) {
       return ApiResponse(res, 401, false, "please provide a roomId");
     }
@@ -232,7 +231,8 @@ router.post(
   authMiddleware,
   upload.single("file"),
   async (req: Request, res: Response) => {
-    const SlideId = req.file?.filename;
+    const slideId = req.file?.filename;
+    console.log("THe upload pdf slide id is", slideId);
     const filePath = req.file?.path;
     const { RoomId } = req.params;
     try {
@@ -246,13 +246,13 @@ router.post(
       if (!imgId) {
         throw new Error();
       }
-
+     
       const ImageIdDb = imgId.map(async (id) => {
         await prisma.image.create({
           data: {
             roomId: RoomId,
             imageId: id,
-            slideId : SlideId!
+            slideId : slideId!
           },
         });
       });
@@ -267,7 +267,7 @@ router.post(
   }
 );
 
-router.get(
+router.post(
   "/get-slides/:RoomId",
   authMiddleware,
   async (req: Request, res: Response) => {
@@ -279,19 +279,28 @@ router.get(
     try {
       const imageurls = await prisma.image.findMany({
         where: {
-          roomId: roomId,
-          slideId : slideId
+           roomId : roomId,
+           slideId : slideId
         },
         orderBy: {
           imageId: "asc",
         },
+        select :{
+          imageId : true
+        }
       });
+
+      const allSlidesUrl = imageurls.map((slide) => {
+          return slide.imageId
+      })
+
+      const isFolderClear = await ClearFolder(slideId,allSlidesUrl);
       return ApiSuccessResponse(
         res,
         200,
         true,
         "fetched images url successfully",
-        { imageurls: imageurls }
+        { imageurls: allSlidesUrl }
       );
     } catch (error) {
       return ApiResponse(res, 500, false, "Internal Server Error");

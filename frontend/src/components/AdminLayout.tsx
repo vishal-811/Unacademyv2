@@ -32,6 +32,7 @@ import Draggable from "react-draggable";
 import { Loader } from "./Loader";
 import axios from "axios";
 import { GetSlides } from "./getSlides";
+import { useFileName } from "../strore/useFileName";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
@@ -211,7 +212,7 @@ export default function AdminLayout() {
               <UploadSlides RoomId={RoomId} setPdfUploaded = {setPdfUploaded}/>
             </div>
           ) : (
-            activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl bg-blue-600 w-full h-full object-cover"><GetSlides/></div>
+            activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl w-full h-full object-cover"><GetSlides/></div>
           )}
 
           {/* Video */}
@@ -299,6 +300,7 @@ const UploadSlides = ({ RoomId, setPdfUploaded }: { RoomId: string,setPdfUploade
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   // const [error, setError] = useState<boolean>(false);
+  const setFileName = useFileName((state) => state.setFileName);
 
   async function handleUploadPdf(file: File) {
     if (!file || file.type !== "application/pdf") return;
@@ -306,8 +308,9 @@ const UploadSlides = ({ RoomId, setPdfUploaded }: { RoomId: string,setPdfUploade
     const formData = new FormData();
     formData.append("file", file);
     
-    const fileName = file.name;
-
+    const filename = file.name;
+    setFileName(filename);
+    
     try {
       setLoading(true);
       const res = await axios.post(
