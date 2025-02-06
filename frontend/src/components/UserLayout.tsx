@@ -7,15 +7,14 @@ import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
 import { useExcaliData } from "../strore/useExcaliData";
 import { useNavigate, useParams } from "react-router-dom";
-import { Room } from "livekit-client";
 import { useRef } from "react";
-import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { useRoomJoin } from "../strore/useRoomJoin";
 import { ChatComponent } from "./Chat";
 import { useNewMsg } from "../strore/useMsg";
 import { useChatHistory } from "../strore/useChatHistory";
 import Draggable from "react-draggable";
+import useUserLiveKit from "../hooks/useUserLivekit";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -35,19 +34,18 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const setChatHistory = useChatHistory((state) => state.setChatHistory);
   const { RoomId } = useParams();
 
-  const roomRef = useRef<Room | null>(null);
   const socket = useRef<WebSocket | null>(null);
 
   const navigate = useNavigate();
 
-  const { videoRef, audioRef, room, connection } = useLiveKit(
-    liveKitToken,
-    roomRef
-  );
+  const { videoRef, audioRef, screenShareRef, roomRef, connection } =
+    useUserLiveKit(liveKitToken);
 
-  roomRef.current = room;
+  console.log("the screen share is", screenShareRef);
+
   useEffect(() => {
     if (Socket || !connection) return;
+
     if (RoomId) {
       setRoomId(RoomId);
     }
@@ -142,28 +140,43 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
         <motion.div
           layout
           className={`border border-primary rounded-lg overflow-hidden relative ${
-            hidepanel ? "w-full sm:w-[80%]" : "w-full"
+            hidepanel ? "w-full h-full sm:w-[80%]" : "w-full h-full"
           }`}
         >
           {activeScreen === "excalidraw" && <ExcalidrawComponent />}
-          {activeScreen === "screen_share" && <div>Share Screen</div>}
+          {activeScreen === "screen_share" && (
+            <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
+              <video
+                ref={screenShareRef}
+                autoPlay
+                playsInline
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* Video */}
-          <Draggable disabled={activeScreen === "video"}>
+          <Draggable
+            disabled={activeScreen === "video"}
+            position={activeScreen === "video" ? { x: 0, y: 0 } : undefined}
+          >
             <div
               className={`absolute ${
                 activeScreen === "video"
-                  ? "w-full h-full object-cover"
+                  ? "w-full h-full top-0 left-0 object-cover overflow-hidden"
                   : "top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-xl shadow-lg z-50"
               }`}
+              style={{
+                transform: activeScreen === "video" ? "none" : undefined,
+              }}
             >
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-xl"
               />
-              <audio ref={audioRef} autoPlay />
+              <audio ref={audioRef} autoPlay muted />
             </div>
           </Draggable>
         </motion.div>

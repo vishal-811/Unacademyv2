@@ -24,15 +24,14 @@ import {
   VideoPresets,
 } from "livekit-client";
 import { useRef } from "react";
-import useLiveKit from "../hooks/useLiveKit";
 import { toast } from "sonner";
 import { ChatComponent } from "./Chat";
 import { useNewMsg } from "../strore/useMsg";
 import Draggable from "react-draggable";
 import { Loader } from "./Loader";
 import axios from "axios";
-import { GetSlides } from "./getSlides";
 import { useFileName } from "../strore/useFileName";
+import useAdminLiveKit from "../hooks/useAdminLiveKit";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
@@ -49,45 +48,41 @@ export default function AdminLayout() {
   const [pdfUploaded, setPdfUploaded] = useState<boolean>(false);
   const { RoomId } = useParams<string>();
 
-  const roomRef = useRef<Room | null>(null);
   const socket = useRef<WebSocket | null>(null);
-  // const shareScreenRef = useRef<LocalTrack[] | null>(null);
-  const shareScreenVideoRef = useRef<HTMLVideoElement | null>(null);
-  const shareScreenAudioRef = useRef<HTMLAudioElement | null>(null);
 
   if (!RoomId) return;
 
-  const { videoRef, audioRef, room, connection } = useLiveKit(
-    liveKitToken,
-    roomRef
-  );
+  const { videoRef, screenShareRef, roomRef, connection } =
+    useAdminLiveKit(liveKitToken);
 
+  const room = roomRef.current;
   async function handleShareScreen(room: Room | null) {
-    if (!room) return;
-    setActiveScreen("screenshare");
-    await room.localParticipant.setScreenShareEnabled(true);
+    try {
+      if (!room) return;
 
-    const screenShareTrack = await createLocalScreenTracks({
-      audio: true,
-    });
+      setActiveScreen("screenshare");
+      const screenShareTracks = await createLocalScreenTracks({
+        audio: true,
+      });
 
-    screenShareTrack.map(async (track) => {
-      try {
-        if (track.kind === Track.Kind.Video) {
-          track.attach(shareScreenVideoRef.current!);
-          await room.localParticipant.publishTrack(track);
-        }
-        if (track.kind === Track.Kind.Audio) {
-          track.attach(shareScreenAudioRef.current!);
-          await room.localParticipant.publishTrack(track);
-        }
-      } catch (error) {
-        console.log("error in publishing the screenShareTrack to the client");
-      }
-    });
+      await Promise.all(
+        screenShareTracks.map(async (track) => {
+          if (track.kind === Track.Kind.Video) {
+            track.attach(screenShareRef.current!);
+            await room.localParticipant.publishTrack(track);
+            console.log("The screen share data is called");
+          }
+        })
+      );
+
+      await room.localParticipant.setScreenShareEnabled(true);
+    } catch (error) {
+      console.error("Screen sharing failed:", error);
+      await room?.localParticipant.setScreenShareEnabled(false);
+    }
   }
-
   useEffect(() => {
+    console.log("THe admin layout use effect is called ");
     if (Socket || !connection || !RoomId) return;
     const token_url = Cookies.get("token");
 
@@ -121,6 +116,7 @@ export default function AdminLayout() {
     };
 
     (async () => {
+      console.log("THis function is called again");
       if (!liveKitToken || !room) return;
       try {
         await room.localParticipant.setCameraEnabled(true);
@@ -134,22 +130,20 @@ export default function AdminLayout() {
           echoCancellation: true,
           noiseSuppression: true,
         });
-
         if (videoRef.current) {
           videoTrack.attach(videoRef.current);
-        }
-        if (audioRef.current) {
-          audioTrack.attach(audioRef.current);
         }
 
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);
       } catch (error) {
-        toast.error("error in connecting to the livekit serrver");
+        console.log(error);
+        toast.error("error in connecting to the livekit server");
       }
     })();
 
     return () => {
+      console.log("The admin unmount is called");
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(
           JSON.stringify({
@@ -185,6 +179,8 @@ export default function AdminLayout() {
     );
   };
 
+  console.log("rendered!");
+
   return (
     <div className="w-full h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-900 to-gray-800 p-4 flex flex-col space-y-4 relative">
       <div className="flex flex-col sm:flex-row h-[calc(100%-4rem)] space-y-4 sm:space-y-0 sm:space-x-4">
@@ -199,38 +195,43 @@ export default function AdminLayout() {
           {activeScreen === "screenshare" && (
             <div className="w-full h-full flex items-center justify-center bg-secondary text-secondary-foreground">
               <video
-                ref={shareScreenVideoRef}
+                ref={screenShareRef}
                 autoPlay
                 playsInline
                 className="w-full h-full object-cover"
               />
-              <audio ref={shareScreenAudioRef} autoPlay />
             </div>
           )}
           {activeScreen === "slides" && !pdfUploaded ? (
             <div className="w-full h-full flex items-center justify-center">
-              <UploadSlides RoomId={RoomId} setPdfUploaded = {setPdfUploaded}/>
+              <UploadSlides RoomId={RoomId} setPdfUploaded={setPdfUploaded} />
             </div>
           ) : (
-            activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl w-full h-full object-cover"><GetSlides/></div>
+            <div></div>
+            // activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl w-full h-full object-cover"><GetSlides/></div>
           )}
 
           {/* Video */}
-          <Draggable disabled={activeScreen === "video"}>
+          <Draggable
+            disabled={activeScreen === "video"}
+            position={activeScreen === "video" ? { x: 0, y: 0 } : undefined}
+          >
             <div
-              className={`${
+              className={`absolute ${
                 activeScreen === "video"
-                  ? "absolute w-full h-full"
-                  : "absolute top-16 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-lg overflow-hidden shadow-lg z-50 bg-opacity-100 object-cover"
+                  ? "w-full h-full top-0 left-0 object-cover overflow-hidden"
+                  : "top-0 right-0 min-w-[250px] h-36 bg-background border-2 border-primary rounded-xl shadow-lg z-50"
               }`}
+              style={{
+                transform: activeScreen === "video" ? "none" : undefined,
+              }}
             >
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-xl"
               />
-              <audio ref={audioRef} autoPlay />
             </div>
           </Draggable>
         </motion.div>
@@ -296,7 +297,13 @@ export default function AdminLayout() {
   );
 }
 
-const UploadSlides = ({ RoomId, setPdfUploaded }: { RoomId: string,setPdfUploaded : React.Dispatch<React.SetStateAction<boolean>>}) => {
+const UploadSlides = ({
+  RoomId,
+  setPdfUploaded,
+}: {
+  RoomId: string;
+  setPdfUploaded: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   // const [error, setError] = useState<boolean>(false);
@@ -307,10 +314,10 @@ const UploadSlides = ({ RoomId, setPdfUploaded }: { RoomId: string,setPdfUploade
 
     const formData = new FormData();
     formData.append("file", file);
-    
+
     const filename = file.name;
     setFileName(filename);
-    
+
     try {
       setLoading(true);
       const res = await axios.post(

@@ -3,12 +3,15 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useFileName } from "../strore/useFileName";
 import { useParams } from "react-router-dom";
+import { useSocket } from "../strore/useSocket";
 
 export function GetSlides() {
   const [loading, setLoading] = useState(false);
   const [imgUrls, setImgUrls] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentImage, setCurrentImage] = useState("");
+  
+  const Socket = useSocket((state) => state.socket);
 
   const fileName = useFileName((state) => state.fileName);
   const { RoomId } = useParams<string>();
@@ -38,6 +41,15 @@ export function GetSlides() {
     async function fetchSlides() {
       try {
         setLoading(true);
+        
+        Socket?.send(JSON.stringify({
+            type :"switch_event",
+            data :{
+                roomId : RoomId,
+                eventType : "switch_to_slides"
+            }
+        }))
+
         const res = await axios.post(
           `http://localhost:3000/api/v1/room/get-slides/${RoomId}`,
           { fileName },

@@ -1,26 +1,20 @@
 import {
-  RemoteTrack,
   Room,
-  RoomEvent,
   VideoPresets,
+  RoomEvent,
   Track,
+  RemoteTrack,
 } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
 
-export default function useLiveKit(
-  liveKitToken: string,
-  roomRef: React.MutableRefObject<Room | null>
-) {
+export default function useUserLiveKit(liveKitToken: string) {
+  const [connection, setConnection] = useState<boolean>(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [connection, setConnection] = useState<boolean>(false);
+  const screenShareRef = useRef<HTMLVideoElement | null>(null);
+  const roomRef = useRef<Room | null>(null);
 
   useEffect(() => {
-    if (!liveKitToken) {
-      console.error("LiveKit token is missing!");
-      return;
-    }
-
     const room = new Room({
       adaptiveStream: true,
       dynacast: true,
@@ -28,16 +22,21 @@ export default function useLiveKit(
         resolution: VideoPresets.h720.resolution,
       },
     });
+
     roomRef.current = room;
 
     roomRef.current.on(RoomEvent.TrackSubscribed, handleTrackSubscribe);
 
     function handleTrackSubscribe(track: RemoteTrack) {
-      if (track.kind === Track.Kind.Video) {
+      if (track.kind === Track.Kind.Video && track.source === "screen_share") {
+        console.log("screen share track")
+        track.attach(screenShareRef.current!);
+      } else if (track.kind === Track.Kind.Video) {
         track.attach(videoRef.current!);
       }
       if (track.kind === Track.Kind.Audio) {
         track.attach(audioRef.current!);
+        audioRef.current!.muted = false;
       }
     }
 
@@ -55,7 +54,6 @@ export default function useLiveKit(
           }
         );
         setConnection(true);
-        console.log("connected to the livekit server");
       } catch (error) {
         console.log(`error while connecting to live kit server ${error}`);
         return null;
@@ -63,5 +61,5 @@ export default function useLiveKit(
     })();
   }, [liveKitToken]);
 
-  return { videoRef, audioRef, room: roomRef.current, connection };
+  return { videoRef, audioRef, screenShareRef, roomRef, connection };
 }
