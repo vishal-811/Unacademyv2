@@ -32,6 +32,7 @@ import { Loader } from "./Loader";
 import axios from "axios";
 import { useFileName } from "../strore/useFileName";
 import useAdminLiveKit from "../hooks/useAdminLiveKit";
+import { GetSlides } from "./getSlides";
 
 export default function AdminLayout() {
   const liveKitToken = localStorage.getItem("liveKitToken");
@@ -70,20 +71,17 @@ export default function AdminLayout() {
           if (track.kind === Track.Kind.Video) {
             track.attach(screenShareRef.current!);
             await room.localParticipant.publishTrack(track);
-            console.log("The screen share data is called");
           }
         })
       );
 
       await room.localParticipant.setScreenShareEnabled(true);
     } catch (error) {
-      console.error("Screen sharing failed:", error);
       await room?.localParticipant.setScreenShareEnabled(false);
     }
   }
   useEffect(() => {
-    console.log("THe admin layout use effect is called ");
-    if (Socket || !connection || !RoomId) return;
+    if (Socket || !connection || !RoomId || !room) return;
     const token_url = Cookies.get("token");
 
     let ws = socket.current;
@@ -116,7 +114,6 @@ export default function AdminLayout() {
     };
 
     (async () => {
-      console.log("THis function is called again");
       if (!liveKitToken || !room) return;
       try {
         await room.localParticipant.setCameraEnabled(true);
@@ -130,6 +127,7 @@ export default function AdminLayout() {
           echoCancellation: true,
           noiseSuppression: true,
         });
+
         if (videoRef.current) {
           videoTrack.attach(videoRef.current);
         }
@@ -137,13 +135,12 @@ export default function AdminLayout() {
         await room.localParticipant.publishTrack(videoTrack);
         await room.localParticipant.publishTrack(audioTrack);
       } catch (error) {
-        console.log(error);
+        console.error(error);
         toast.error("error in connecting to the livekit server");
       }
     })();
 
     return () => {
-      console.log("The admin unmount is called");
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(
           JSON.stringify({
@@ -164,7 +161,7 @@ export default function AdminLayout() {
       localStorage.removeItem("liveKitToken");
       setSocket(null);
     };
-  }, [RoomId, liveKitToken, connection]);
+  }, [RoomId, liveKitToken, connection, room]);
 
   const handleSendEvent = (type: string) => {
     if (!Socket) return;
@@ -178,8 +175,6 @@ export default function AdminLayout() {
       })
     );
   };
-
-  console.log("rendered!");
 
   return (
     <div className="w-full h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-900 to-gray-800 p-4 flex flex-col space-y-4 relative">
@@ -207,8 +202,11 @@ export default function AdminLayout() {
               <UploadSlides RoomId={RoomId} setPdfUploaded={setPdfUploaded} />
             </div>
           ) : (
-            <div></div>
-            // activeScreen === "slides" && <div className="text-red-500 font-bold text-3xl w-full h-full object-cover"><GetSlides/></div>
+            activeScreen === "slides" && (
+              <div className="text-red-500 font-bold text-3xl w-full h-full object-cover">
+                <GetSlides />
+              </div>
+            )
           )}
 
           {/* Video */}
@@ -329,7 +327,6 @@ const UploadSlides = ({
       );
 
       if (res.status === 200) {
-        console.log("Pdf uploaded successfully");
         setPdfUploaded(true);
       }
     } catch (error) {

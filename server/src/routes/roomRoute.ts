@@ -13,6 +13,7 @@ import path from "path";
 import { UploadToS3 } from "../lib/aws";
 import fs from "fs";
 import { ClearFolder } from "../lib/cleanFolder";
+import { RoleType } from "@prisma/client";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) =>
@@ -232,9 +233,18 @@ router.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     const slideId = req.file?.filename;
-    console.log("THe upload pdf slide id is", slideId);
     const filePath = req.file?.path;
     const { RoomId } = req.params;
+
+    const userRole = req.session.userId || req.user?.role;
+    if (userRole !== RoleType.instructor) {
+      return ApiResponse(
+        res,
+        401,
+        false,
+        "You are not allowed to perform this action"
+      );
+    }
     try {
       const response = await PdfToSlides(filePath!);
       if (!response) {
@@ -246,22 +256,22 @@ router.post(
       if (!imgId) {
         throw new Error();
       }
-     
+
       const ImageIdDb = imgId.map(async (id) => {
         await prisma.image.create({
           data: {
             roomId: RoomId,
             imageId: id,
-            slideId : slideId!
+            slideId: slideId!,
           },
         });
       });
 
       await Promise.all(ImageIdDb);
-      
+
       return ApiSuccessResponse(res, 200, true, "Pdf to slides converted", {});
-    } catch (error : any) {
-      console.error("the error occured is", error.message)
+    } catch (error: any) {
+      console.error("the error occured is", error.message);
       return ApiResponse(res, 500, false, "Internal Server Error");
     }
   }
@@ -276,25 +286,35 @@ router.post(
     if (!roomId)
       return ApiResponse(res, 401, false, "Please Provide a Room Id");
 
+    const userRole = req.session.userId || req.user?.role;
+    if (userRole !== RoleType.instructor) {
+      return ApiResponse(
+        res,
+        401,
+        false,
+        "You are not allowed to perform this action"
+      );
+    }
+
     try {
       const imageurls = await prisma.image.findMany({
         where: {
-           roomId : roomId,
-           slideId : slideId
+          roomId: roomId,
+          slideId: slideId,
         },
         orderBy: {
           imageId: "asc",
         },
-        select :{
-          imageId : true
-        }
+        select: {
+          imageId: true,
+        },
       });
 
       const allSlidesUrl = imageurls.map((slide) => {
-          return slide.imageId
-      })
+        return slide.imageId;
+      });
 
-      const isFolderClear = await ClearFolder(slideId,allSlidesUrl);
+      const isFolderClear = await ClearFolder(slideId, allSlidesUrl);
       return ApiSuccessResponse(
         res,
         200,

@@ -1,10 +1,7 @@
 import { Room, VideoPresets } from "livekit-client";
 import { useEffect, useRef, useState } from "react";
 
-export default function useAdminLiveKit(
-  liveKitToken: string,
-//   roomRef: React.MutableRefObject<Room | null>
-) {
+export default function useAdminLiveKit(liveKitToken: string) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const screenShareRef = useRef<HTMLVideoElement | null>(null);
   const roomRef = useRef<Room | null>(null);
@@ -24,7 +21,6 @@ export default function useAdminLiveKit(
     });
 
     roomRef.current = room;
-
     (async () => {
       try {
         await roomRef.current?.prepareConnection(
@@ -33,15 +29,21 @@ export default function useAdminLiveKit(
         );
         await roomRef.current?.connect(
           "wss://unacademy-7fpyqjfj.livekit.cloud",
-          liveKitToken
+          liveKitToken,
+          {
+            autoSubscribe: true,
+          }
         );
-
         setConnection(true);
       } catch (error) {
-        console.log(`error while connecting to the live kit server ${error}`);
+        setConnection(false);
         return null;
       }
     })();
+
+    return () => {
+      room.disconnect();
+    };
   }, [liveKitToken]);
 
   return { videoRef, screenShareRef, roomRef, connection };

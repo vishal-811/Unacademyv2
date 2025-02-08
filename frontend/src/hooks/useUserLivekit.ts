@@ -29,7 +29,6 @@ export default function useUserLiveKit(liveKitToken: string) {
 
     function handleTrackSubscribe(track: RemoteTrack) {
       if (track.kind === Track.Kind.Video && track.source === "screen_share") {
-        console.log("screen share track")
         track.attach(screenShareRef.current!);
       } else if (track.kind === Track.Kind.Video) {
         track.attach(videoRef.current!);

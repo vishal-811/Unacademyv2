@@ -15,6 +15,7 @@ import { useNewMsg } from "../strore/useMsg";
 import { useChatHistory } from "../strore/useChatHistory";
 import Draggable from "react-draggable";
 import useUserLiveKit from "../hooks/useUserLivekit";
+import { GetSlides } from "./getSlides";
 
 interface userLayoutProps {
   liveKitToken: string;
@@ -23,7 +24,7 @@ interface userLayoutProps {
 export default function UserLayout({ liveKitToken }: userLayoutProps) {
   const [hidepanel, setIsHidePanel] = useState(false);
   const [activeScreen, setActiveScreen] = useState<
-    "excalidraw" | "video" | "screen_share"
+    "excalidraw" | "video" | "screen_share" | "slides"
   >("video");
   const [roomId, setRoomId] = useState<string | null>(null);
   const Socket = useSocket((state) => state.socket);
@@ -40,8 +41,6 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
 
   const { videoRef, audioRef, screenShareRef, roomRef, connection } =
     useUserLiveKit(liveKitToken);
-
-  console.log("the screen share is", screenShareRef);
 
   useEffect(() => {
     if (Socket || !connection) return;
@@ -95,20 +94,24 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
 
       let { data } = msg;
       if (state) {
-        let currState = state === "switch_to_video" ? "video" : "excalidraw";
+        let currState = state === "switch_to_video" ? "video" : state;
         if (state === "switch_to_screen_share") currState = "screen_share";
+        if (state === "switch_to_slides") currState = "slides";
         data = currState;
       }
       if (
         data !== undefined &&
-        (data === "video" || data === "excalidraw" || data === "screen_share")
+        (data === "video" ||
+          data === "excalidraw" ||
+          data === "screen_share" ||
+          data === "slides")
       ) {
         const currentScreen = data;
         if (currentScreen === "video") setActiveScreen("video");
         else if (currentScreen === "excalidraw") setActiveScreen("excalidraw");
-        else if (currentScreen === "screen_share") {
+        else if (currentScreen === "screen_share")
           setActiveScreen("screen_share");
-        }
+        else if (currentScreen === "slides") setActiveScreen("slides");
       } else if (data) {
         const appState = data;
         const dummyApp = { ...appState, collaborators: [] };
@@ -154,6 +157,7 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
               />
             </div>
           )}
+          {activeScreen === "slides" && <GetSlides/>}
 
           {/* Video */}
           <Draggable

@@ -10,15 +10,35 @@ export function GetSlides() {
   const [imgUrls, setImgUrls] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentImage, setCurrentImage] = useState("");
-  
+
   const Socket = useSocket((state) => state.socket);
 
   const fileName = useFileName((state) => state.fileName);
   const { RoomId } = useParams<string>();
 
+  function handleSendSlideChangeEvent({
+    RoomId,
+    imageId,
+  }: {
+    RoomId: string;
+    imageId: string;
+  }) {
+    Socket?.send(
+      JSON.stringify({
+        type: "slide_change",
+        data: {
+          roomId: RoomId,
+          imageId: imageId,
+        },
+      })
+    );
+  }
+
   const getImageFromCdn = useCallback(
     async (imageId: string) => {
       try {
+        if (!RoomId) return;
+
         setLoading(true);
         const res = await axios.get(
           `https://livetrack.b-cdn.net/${RoomId}/${imageId}.jpeg`,
@@ -27,6 +47,7 @@ export function GetSlides() {
         if (res.status === 200) {
           const blob = new Blob([res.data], { type: "image/jpeg" });
           setCurrentImage(URL.createObjectURL(blob));
+          handleSendSlideChangeEvent({ RoomId, imageId });
         }
       } catch (error) {
         console.error("Error fetching image from CDN", error);
@@ -41,15 +62,6 @@ export function GetSlides() {
     async function fetchSlides() {
       try {
         setLoading(true);
-        
-        Socket?.send(JSON.stringify({
-            type :"switch_event",
-            data :{
-                roomId : RoomId,
-                eventType : "switch_to_slides"
-            }
-        }))
-
         const res = await axios.post(
           `http://localhost:3000/api/v1/room/get-slides/${RoomId}`,
           { fileName },
@@ -83,7 +95,7 @@ export function GetSlides() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden h-full w-full">
       <div className="relative aspect-video">
         {loading ? (
           <div className="absolute inset-0 flex items-center justify-center">

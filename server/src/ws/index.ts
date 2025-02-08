@@ -4,6 +4,7 @@ import { handleJoinRoom, handleLeaveRoom } from "./room/RoomManager";
 import { handleExcaliDrawEvent } from "./excalidraw/ExcaliDrawEvents";
 import { handleSwitchEvent } from "./switchevents";
 import { handleChatEvent } from "./chat/ChatEvent";
+import { handleSlideChange } from "./slide/SlideChange";
 
 export function handleWebsocketCloseEvent() {}
 
@@ -34,6 +35,10 @@ export function handleWebsocketMessageEvent(
     }
     case "chat_event": {
       handleChatEvent(data, ws);
+      break;
+    }
+    case "slide_change" :{
+      handleSlideChange(data,ws);
       break;
     }
   }
