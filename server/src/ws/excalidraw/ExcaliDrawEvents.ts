@@ -20,6 +20,6 @@ export function handleExcaliDrawEvent(
     elements: excaliEvent.elements,
     appState: updatedExcaliEvent,
   };
-  BroadCastMessage(roomId, ws, { data: finalExcaliEvent });
+  BroadCastMessage(roomId, ws, { excaliData: finalExcaliEvent });
   // Write in a kafka for the record.
 }

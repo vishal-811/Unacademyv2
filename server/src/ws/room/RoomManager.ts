@@ -17,13 +17,17 @@ export enum RoomState {
   slides = "switch_to_slides",
 }
 
+export const Current_Room_State = {
+  state: RoomState.Video,
+};
+
 interface RoomDetails {
   status: RoomStatus;
   users: WebSocket[];
   state: RoomState;
 }
 
-export const roomsInfo = new Map<string, RoomDetails>(); //<RoomId,[user1,user2...]>
+export const roomsInfo = new Map<string, RoomDetails>();
 
 export async function handleJoinRoom(
   data: RoomEventData,
@@ -32,7 +36,10 @@ export async function handleJoinRoom(
 ) {
   try {
     const userId = userToken.userId;
-    if (!userId) ws.send(JSON.stringify({ msg: "Please provide the userId" }));
+    if (!userId)
+      ws.send(
+        JSON.stringify({ payload: { msg: "Please provide the userId" } })
+      );
     const userExist = await prisma.user.findFirst({
       where: {
         id: userId,
@@ -43,13 +50,15 @@ export async function handleJoinRoom(
     });
 
     if (!userExist) {
-      ws.send(JSON.stringify({ msg: "No user exist with this user Id" }));
+      ws.send(
+        JSON.stringify({ payload: { msg: "No user exist with this user Id" } })
+      );
       return;
     }
     const role = userExist.role;
     const { roomId } = data;
     if (!roomId) {
-      ws.send(JSON.stringify({ msg: "Please provide a room id" }));
+      ws.send(JSON.stringify({ payload: { msg: "Please provide a room id" } }));
       return;
     }
 
@@ -60,7 +69,9 @@ export async function handleJoinRoom(
     });
 
     if (!isRoomExist) {
-      ws.send(JSON.stringify({ msg: "No room exist with this roomId" }));
+      ws.send(
+        JSON.stringify({ payload: { msg: "No room exist with this roomId" } })
+      );
       return;
     }
 
@@ -74,7 +85,7 @@ export async function handleJoinRoom(
         status:
           role === RoleType.instructor ? RoomStatus.Active : RoomStatus.Waiting,
         users: [],
-        state: RoomState.Video,
+        state: Current_Room_State.state,
       };
       roomsInfo.set(roomId, room);
     }
@@ -86,9 +97,11 @@ export async function handleJoinRoom(
       room.users = [...room.users, ws];
       ws.send(
         JSON.stringify({
-          msg: "wait for the admin to join the meeting",
-          state: room.state,
-          chat: chatHistory,
+          payload: {
+            msg: "wait for the admin to join the meeting",
+            state: Current_Room_State.state,
+            prevChat: chatHistory,
+          },
         })
       );
       return;
@@ -100,29 +113,34 @@ export async function handleJoinRoom(
       room.users.forEach((user) => {
         if (user !== ws) {
           user.send(
-            JSON.stringify({ msg: "Admin join the meeting", chat: chatHistory })
+            JSON.stringify({
+              payload: { msg: "Admin join the meeting", prevChat: chatHistory, state : Current_Room_State.state },
+            })
           );
         }
       });
 
       roomsInfo.set(roomId, room);
-      ws.send(JSON.stringify({ msg: "u joined the meeting sucessfully" }));
+      ws.send(
+        JSON.stringify({ payload: { msg: "u joined the meeting sucessfully" } })
+      );
       return;
     }
 
     if (room) {
       room.users = [...room.users, ws];
-
       ws.send(
         JSON.stringify({
-          msg: "You joined the meeting",
-          state: room.state,
-          chat: chatHistory,
+          payload: {
+            msg: "You joined the meeting",
+            state: Current_Room_State.state,
+            prevChat: chatHistory,
+          },
         })
       );
     }
   } catch (error) {
-    ws.send(JSON.stringify({ msg: "Something went wrong, ws" }));
+    ws.send(JSON.stringify({ payload: { msg: "Something went wrong, ws" } }));
   }
 }
 
@@ -135,7 +153,9 @@ export function handleLeaveRoom(
     const { roomId } = data;
     let room = roomsInfo.get(roomId)?.users;
     if (!room) {
-      ws.send(JSON.stringify({ msg: "No room exist with this room Id" }));
+      ws.send(
+        JSON.stringify({ payload: { msg: "No room exist with this room Id" } })
+      );
       return;
     }
     if (role === RoleType.instructor) {
@@ -146,9 +166,9 @@ export function handleLeaveRoom(
     room = room.filter((user: WebSocket) => {
       return user != ws;
     });
-    ws.send(JSON.stringify({ msg: "You leave the meeting" }));
+    ws.send(JSON.stringify({payload : { msg: "You leave the meeting" }}));
     return;
   } catch (error) {
-    ws.send(JSON.stringify({ msg: "Something went wrong, ws" }));
+    ws.send(JSON.stringify({payload : { msg: "Something went wrong, ws" }}));
   }
 }

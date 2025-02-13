@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { useSocket } from "../strore/useSocket";
 import Cookies from "js-cookie";
-import { useExcaliData } from "../strore/useExcaliData";
+// import { useExcaliData } from "../strore/useExcaliData";
 import { useParams } from "react-router-dom";
 import {
   createLocalAudioTrack,
@@ -44,7 +44,7 @@ export default function AdminLayout() {
 
   const Socket = useSocket((state) => state.socket);
   const setSocket = useSocket((state) => state.setSocket);
-  const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
+  // const setExcalidrawData = useExcaliData((state) => state.setExcalidrawData);
   const setNewMsg = useNewMsg((state) => state.setNewMsg);
   const [pdfUploaded, setPdfUploaded] = useState<boolean>(false);
   const { RoomId } = useParams<string>();
@@ -101,16 +101,17 @@ export default function AdminLayout() {
     setSocket(ws);
 
     ws.onmessage = (message: any) => {
-      const { msg } = JSON.parse(message.data);
-      if (msg.eventType === "chat_event") {
-        const { message } = msg;
+      const parsedData = JSON.parse(message.data);
+      const { chatData, msg } = parsedData.payload;
+      if (chatData && chatData.eventType === "chat_event") {
+        const  message  = chatData.message;
         setNewMsg(message);
       }
       if (msg === "u joined the meeting sucessfully") {
         toast.success("You Joined the meeting!");
       }
-      if (!message.data.message) return;
-      setExcalidrawData(JSON.parse(message.data.msg));
+      // if (!message.data.message) return;
+      // setExcalidrawData(JSON.parse(message.data.msg));
     };
 
     (async () => {
@@ -164,6 +165,7 @@ export default function AdminLayout() {
   }, [RoomId, liveKitToken, connection, room]);
 
   const handleSendEvent = (type: string) => {
+    console.log("Switch event occured", type)
     if (!Socket) return;
     Socket?.send(
       JSON.stringify({
@@ -251,6 +253,7 @@ export default function AdminLayout() {
         <CustomButton
           onClick={() => {
             setActiveScreen("slides");
+            handleSendEvent("switch_to_slides");
           }}
           variant="outline"
         >
@@ -270,8 +273,8 @@ export default function AdminLayout() {
         </CustomButton>
         <CustomButton
           onClick={() => {
-            setActiveScreen("excalidraw");
             handleSendEvent("switch_to_excalidraw");
+            setActiveScreen("excalidraw");
           }}
           variant="outline"
         >

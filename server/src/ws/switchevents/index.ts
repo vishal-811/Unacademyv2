@@ -1,6 +1,6 @@
 import WebSocket from "ws";
 import { SwitchEvent } from "../types";
-import { roomsInfo, RoomState } from "../room/RoomManager";
+import { Current_Room_State, roomsInfo, RoomState } from "../room/RoomManager";
 import { BroadCastMessage } from "../lib/utils";
 
 export const handleSwitchEvent = (data: SwitchEvent, ws: WebSocket) => {
@@ -14,36 +14,37 @@ export const handleSwitchEvent = (data: SwitchEvent, ws: WebSocket) => {
     ws.send(JSON.stringify({ msg: "No room exist with this roomId" }));
     return;
   }
+  
   switch (eventType) {
     case "switch_to_video": {
-      room.state = RoomState.Video;
+      Current_Room_State.state = RoomState.Video;
       BroadCastMessage(roomId, ws, {
         msg: "switch to video successfully",
-        data: "video",
+        state: Current_Room_State.state
       });
       break;
     }
     case "switch_to_excalidraw": {
-      room.state = RoomState.ExcaliDraw;
+      Current_Room_State.state= RoomState.ExcaliDraw;
       BroadCastMessage(roomId, ws, {
         msg: "switch to excalidraw successfully",
-        data: "excalidraw",
+        state: Current_Room_State.state
       });
       break;
     }
     case "switch_to_screen_share": {
-      room.state = RoomState.ScreenShare;
+     Current_Room_State.state = RoomState.ScreenShare;
       BroadCastMessage(roomId, ws, {
         msg: "switch to screen share successfully",
-        data: "screen_share",
+        state : Current_Room_State.state
       });
       break;
     }
     case "switch_to_slides": {
-      room.state = RoomState.slides;
+      Current_Room_State.state = RoomState.slides;
       BroadCastMessage(roomId, ws, {
         msg: "switch to slides successfully",
-        data: "slides",
+        state: Current_Room_State.state
       });
       break;
     }

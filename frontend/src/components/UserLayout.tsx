@@ -68,14 +68,9 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
 
     ws.onmessage = (message: any) => {
       const parsedMessage = JSON.parse(message.data);
-      const { msg, state, chat } = parsedMessage;
-      if (chat) {
-        setChatHistory(chat);
-      }
-      if (msg.eventType === "chat_event") {
-        const { message } = msg;
-        setNewMsg(message);
-      }
+      const { msg, state, excaliData, chatData, prevChat } =
+        parsedMessage.payload;
+
       if (
         msg === "wait for the admin to join the meeting" ||
         msg === "Admin join the meeting" ||
@@ -90,34 +85,35 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
         navigate("/");
       }
 
-      if (!msg) return;
-
-      let { data } = msg;
       if (state) {
-        let currState = state === "switch_to_video" ? "video" : state;
-        if (state === "switch_to_screen_share") currState = "screen_share";
-        if (state === "switch_to_slides") currState = "slides";
-        data = currState;
+        switch (state) {
+          case "switch_to_video":
+            setActiveScreen("video");
+            break;
+          case "switch_to_excalidraw":
+            setActiveScreen("excalidraw");
+            break;
+          case "switch_to_screen_share":
+            setActiveScreen("screen_share");
+            break;
+          case "switch_to_slides":
+            setActiveScreen("slides");
+            break;
+          default:
+            console.log("error in switch event!");
+        }
       }
-      if (
-        data !== undefined &&
-        (data === "video" ||
-          data === "excalidraw" ||
-          data === "screen_share" ||
-          data === "slides")
-      ) {
-        const currentScreen = data;
-        if (currentScreen === "video") setActiveScreen("video");
-        else if (currentScreen === "excalidraw") setActiveScreen("excalidraw");
-        else if (currentScreen === "screen_share")
-          setActiveScreen("screen_share");
-        else if (currentScreen === "slides") setActiveScreen("slides");
-      } else if (data) {
-        const appState = data;
+      if (excaliData) {
+        const appState = excaliData;
         const dummyApp = { ...appState, collaborators: [] };
-        const dummyData = { appState: dummyApp, elements: data.elements };
+        const dummyData = { appState: dummyApp, elements: excaliData.elements };
         setExcalidrawData(dummyData);
       }
+
+      if (prevChat) setChatHistory(prevChat);
+
+      if (chatData && chatData.eventType === "chat_event")
+        setNewMsg(chatData.message);
     };
 
     return () => {
@@ -157,7 +153,7 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
               />
             </div>
           )}
-          {activeScreen === "slides" && <GetSlides/>}
+          {activeScreen === "slides" && <GetSlides />}
 
           {/* Video */}
           <Draggable
