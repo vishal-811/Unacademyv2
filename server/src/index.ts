@@ -9,7 +9,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import { handleWebsocketCloseEvent, handleWebsocketMessageEvent } from "./ws";
 import url from "url";
 import { extractAuthUser } from "./ws/auth/JwtHelper";
-import { createClient } from 'redis';
+import { createClient } from "redis";
 
 const app = express();
 
@@ -23,12 +23,14 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    origin: ["https://learntrack.vishalsharma.xyz","http://localhost:5173"],
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: ["https://learntrack.vishalsharma.xyz","http://localhost:5173"],
+//     credentials: true,
+//   })
+// );
+
+app.use(cors());
 
 const server = http.createServer(app);
 
@@ -43,7 +45,7 @@ wss.on("connection", (ws: WebSocket, req) => {
     ws.send(JSON.stringify({ msg: "Please provide a valid token" }));
     return;
   }
-   
+
   ws.on("error", (error) => {
     console.error(error);
   });
@@ -65,18 +67,18 @@ app.get("/", (req, res) => {
 });
 
 export const Client = createClient({
-   url :"redis://unacademy-redis:6379"
+  url: "redis://unacademy-redis:6379",
 });
 
-(async()=>{
-try {
-  await Client.connect();
-  console.log("connected to the redis successfully");
-} catch (error) {
-  console.log(error);
-  console.log("error while connecting to the redis");
-}
-server.listen(3000, () => {
-  console.log("Server is running on port 3000");
-});
+(async () => {
+  try {
+    await Client.connect();
+    console.log("connected to the redis successfully");
+  } catch (error) {
+    console.log(error);
+    console.log("error while connecting to the redis");
+  }
+  server.listen(3000, () => {
+    console.log("Server is running on port 3000");
+  });
 })();
