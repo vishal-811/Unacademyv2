@@ -156,7 +156,6 @@ router.get(
     if (!roomId) {
       return ApiResponse(res, 401, false, "please provide a roomId");
     }
-
     try {
       const isRoomExist = await prisma.room.findFirst({
         where: {
