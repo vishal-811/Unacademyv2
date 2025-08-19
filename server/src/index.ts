@@ -61,7 +61,7 @@ app.use(passport.session());
 
 app.use("/api/v1", rootRouter);
 app.get("/", (req, res) => {
-  res.send("hehe");
+  res.send("ok");
 });
 
 export const Client = createClient({

@@ -1,0 +1,55 @@
+name: CD pipeline
+
+on:
+  workflow_run:
+    workflows: ["CI pipeline"]
+    types: [completed]
+    branches: [main]
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      LIVEKIT_API_KEY: ${{ secrets.LIVEKIT_API_KEY }}
+      LIVEKIT_API_SECRET: ${{ secrets.LIVEKIT_API_SECRET }}
+      ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+      SECRET_KEY: ${{ secrets.AWS_SECRET_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            # Stop & remove old container if exists
+            docker rm -f unacademy-server || true
+
+            # Run new container with env variables
+            docker run -d \
+              --name unacademy-server \
+              --network unacademy-network \
+              -p 3000:3000 \
+              -e DATABASE_URL="$DATABASE_URL" \
+              -e GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+              -e GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
+              -e JWT_SECRET="$JWT_SECRET" \
+              -e LIVEKIT_API_KEY="$LIVEKIT_API_KEY" \
+              -e LIVEKIT_API_SECRET="$LIVEKIT_API_SECRET" \
+              -e ACCESS_KEY="$ACCESS_KEY" \
+              -e SECRET_KEY="$SECRET_KEY" \
+              -e AWS_REGION="$AWS_REGION" \
+              -e BUCKET_NAME="$BUCKET_NAME" \
+              vishal811/unacademy-server:latest
