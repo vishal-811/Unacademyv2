@@ -18,7 +18,6 @@ declare global {
   }
 }
 
-
 interface JwtPayload {
   userId: string;
   role: string;
@@ -35,11 +34,7 @@ export function authMiddleware(
   if (req.headers.cookie) {
     const cookie = req.headers.cookie;
     const token = cookie.split("=")[1];
-
-    const isVerified = Jwt.verify(
-      token,
-      process.env.JWT_SECRET || ""
-    ) as JwtPayload;
+    const isVerified = Jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     if (!isVerified) {
       return ApiResponse(res, 401, false, "Invalid token");
     }

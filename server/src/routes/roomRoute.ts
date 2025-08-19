@@ -11,7 +11,6 @@ import multer from "multer";
 import { PdfToSlides } from "../lib/pdfToslides";
 import path from "path";
 import { UploadToS3 } from "../lib/aws";
-import fs from "fs";
 import { ClearFolder } from "../lib/cleanFolder";
 import { RoleType } from "@prisma/client";
 
