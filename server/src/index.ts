@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173","https://learntrack.vishalsharma.xyz"],
     credentials: true,
   })
 );
@@ -65,7 +65,7 @@ app.get("/", (req, res) => {
 });
 
 export const Client = createClient({
-   url :"redis://localhost:6379"
+   url :"redis://unacademy-redis:6379"
 });
 
 (async()=>{
