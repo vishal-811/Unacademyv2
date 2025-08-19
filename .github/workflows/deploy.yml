@@ -35,10 +35,10 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             # Stop & remove old container if exists
-            docker rm -f unacademy-server || true
+            sudo docker rm -f unacademy-server || true
 
             # Run new container with env variables
-            docker run -d \
+            sudo docker run -d \
               --name unacademy-server \
               --network unacademy-network \
               -p 3000:3000 \
