@@ -88,7 +88,7 @@ export default function SignupPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await axios.post("http://localhost:3000/api/v1/auth/signup", {
+      const res = await axios.post("https://unacademy-server.vishalsharma.xyz/api/v1/auth/signup", {
         username: formData.username,
         email: formData.email,
         password: formData.password,

@@ -31,7 +31,7 @@ export default function CreateRoom() {
     try {
       setIsCreating(true);
       const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
-        "http://localhost:3000/api/v1/room/createRoom",
+        "https://unacademy-server.vishalsharma.xyz/api/v1/room/createRoom",
         {
           roomname: roomName,
           description: description,

@@ -49,7 +49,7 @@ export default function SigninPage() {
       setIsSubmitting(true);
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/v1/auth/signin",
+          "https://unacademy-server.vishalsharma.xyz/api/v1/auth/signin",
           {
             email: formData.email,
             password: formData.password,

@@ -11,7 +11,7 @@ export async function GenerateLiveKitToken(
 ): Promise<String | null> {
   try {
     const res: AxiosResponse<liveKitTokenResponse> = await axios.post(
-      `http://localhost:3000/api/v1/room/generateToken`,
+      `https://unacademy-server.vishalsharma.xyz/api/v1/room/generateToken`,
       {
         roomId: roomId,
       },

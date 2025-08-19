@@ -63,7 +63,7 @@ export function GetSlides() {
       try {
         setLoading(true);
         const res = await axios.post(
-          `http://localhost:3000/api/v1/room/get-slides/${RoomId}`,
+          `https://unacademy-server.vishalsharma.xyz/api/v1/room/get-slides/${RoomId}`,
           { fileName },
           { withCredentials: true }
         );

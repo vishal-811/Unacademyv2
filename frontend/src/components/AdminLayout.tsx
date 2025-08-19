@@ -85,7 +85,7 @@ export default function AdminLayout() {
     const token_url = Cookies.get("token");
 
     let ws = socket.current;
-    ws = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+    ws = new WebSocket(`wss://unacademy-server.vishalsharma.xyz/?token=${token_url}`);
 
     ws.onopen = () => {
       ws.send(
@@ -322,7 +322,7 @@ const UploadSlides = ({
     try {
       setLoading(true);
       const res = await axios.post(
-        `http://localhost:3000/api/v1/room/Upload-pdf/${RoomId}`,
+        `https://unacademy-server.vishalsharma.xyz/api/v1/room/Upload-pdf/${RoomId}`,
         formData,
         {
           withCredentials: true,

@@ -13,7 +13,7 @@ export default function JoinRoom() {
     async function isRoomExist() {
       try {
         const res = await axios.get(
-          `http://localhost:3000/api/v1/room/roomExist/${RoomId}`,
+          `https://unacademy-server.vishalsharma.xyz/api/v1/room/roomExist/${RoomId}`,
           {
             withCredentials: true,
           }

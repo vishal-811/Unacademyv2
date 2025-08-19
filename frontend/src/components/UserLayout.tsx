@@ -52,7 +52,7 @@ export default function UserLayout({ liveKitToken }: userLayoutProps) {
     const token_url = Cookies.get("token");
 
     let ws = socket.current;
-    ws = new WebSocket(`ws://localhost:3000?token=${token_url}`);
+    ws = new WebSocket(`https://unacademy-server.vishalsharma.xyz?token=${token_url}`);
     ws.onopen = () => {
       ws.send(
         JSON.stringify({

@@ -29,7 +29,7 @@ const Navbar = () => {
   async function handleLeaveRoom() {
     try {
       const res = await axios.post(
-        `http://localhost:3000/api/v1/room/leave-room/${RoomId}`,
+        `https://unacademy-server.vishalsharma.xyz/api/v1/room/leave-room/${RoomId}`,
         {},
         {
           withCredentials: true,
