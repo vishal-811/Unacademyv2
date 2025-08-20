@@ -23,22 +23,12 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const corsOptions = {
-  origin: ["https://learntrack.vishalsharma.xyz", "http://localhost:5173"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  preflightContinue: false,
-  optionsSuccessStatus: 200
-};
-
-app.use(cors(corsOptions));
-
-app.use((req, res, next) => {
-  console.log('CORS headers:', res.getHeaders());
-  next();
-});
+app.use(
+  cors({
+    origin: "https://learntrack.vishalsharma.xyz",
+    credentials: true
+  })
+);
 
 
 const server = http.createServer(app);
